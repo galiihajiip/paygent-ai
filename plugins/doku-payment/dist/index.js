@@ -1,4 +1,5 @@
 import { definePluginEntry } from "openclaw/plugin-sdk/core";
+import { createHash, createHmac } from "node:crypto";
 //#region node_modules/typebox/build/system/memory/metrics.mjs
 /** TypeBox instantiation metrics */
 const Metrics = {
@@ -179,6 +180,124 @@ function textResult(text, details) {
 		details
 	};
 }
+/**
+* Build Doku HMAC-SHA256 signature header value.
+*
+* Mirrors the working Python implementation in paygent-backend/tools/doku_tool.py.
+* Reference: https://developers.doku.com/getting-started-with-doku-api/signature-component/non-snap/sample-code
+*
+* Component (newline-separated, no trailing newline):
+*   Client-Id:<client_id>
+*   Request-Id:<request_id>
+*   Request-Timestamp:<request_timestamp>
+*   Request-Target:<request_target>
+*   Digest:<base64(sha256(body_str))>
+*
+* IMPORTANT: body_str must be the EXACT same string sent over the wire.
+*/
+function buildDokuSignature(args) {
+	const digest = createHash("sha256").update(args.bodyStr, "utf8").digest("base64");
+	const component = `Client-Id:${args.clientId}\nRequest-Id:${args.requestId}\nRequest-Timestamp:${args.requestTimestamp}\nRequest-Target:${args.requestTarget}\nDigest:${digest}`;
+	return `HMACSHA256=${createHmac("sha256", args.secretKey).update(component, "utf8").digest("base64")}`;
+}
+/**
+* Execute the Doku create-payment-link tool. This is the canonical implementation
+* that both the OpenClaw plugin entry and the bridge server share.
+*/
+async function executeDokuCreatePaymentLink(params) {
+	const clientId = process.env.DOKU_CLIENT_ID ?? "";
+	const secretKey = process.env.DOKU_SECRET_KEY ?? "";
+	const baseUrl = process.env.DOKU_BASE_URL ?? "https://api-sandbox.doku.com";
+	if (!clientId || !secretKey) return textResult("ERROR: DOKU_CLIENT_ID atau DOKU_SECRET_KEY belum dikonfigurasi di environment variables.", {
+		status: "failed",
+		error: "missing_credentials"
+	});
+	const invoiceNumber = "INV-" + crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+	const requestId = crypto.randomUUID();
+	const requestTimestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
+	const requestTarget = "/checkout/v1/payment";
+	const body = {
+		order: {
+			amount: params.nominal_rupiah,
+			invoice_number: invoiceNumber,
+			currency: "IDR",
+			line_items: [{
+				id: "ITEM-001",
+				name: params.item_deskripsi,
+				price: params.nominal_rupiah,
+				quantity: 1
+			}]
+		},
+		payment: { payment_due_date: 60 },
+		customer: {
+			id: "PAYGENT-CUST-001",
+			name: params.nama_klien,
+			email: "billing@paygent.ai"
+		}
+	};
+	const bodyStr = JSON.stringify(body);
+	const headers = {
+		"Client-Id": clientId,
+		"Request-Id": requestId,
+		"Request-Timestamp": requestTimestamp,
+		Signature: buildDokuSignature({
+			clientId,
+			secretKey,
+			requestId,
+			requestTimestamp,
+			requestTarget,
+			bodyStr
+		}),
+		"Content-Type": "application/json"
+	};
+	try {
+		const response = await fetch(`${baseUrl}${requestTarget}`, {
+			method: "POST",
+			headers,
+			body: bodyStr,
+			signal: AbortSignal.timeout(3e4)
+		});
+		if (!response.ok) {
+			const errorText = await response.text();
+			return textResult(`ERROR: Doku API mengembalikan status ${response.status}. Detail: ${errorText}`, {
+				status: "failed",
+				error: `http_${response.status}`
+			});
+		}
+		const paymentUrl = (await response.json())?.response?.payment?.url;
+		if (!paymentUrl) return textResult("ERROR: Struktur response Doku tidak dikenal. Field response.payment.url tidak ditemukan.", {
+			status: "failed",
+			error: "unexpected_response_shape"
+		});
+		const successPayload = {
+			success: true,
+			payment_url: paymentUrl,
+			invoice_number: invoiceNumber,
+			nama_klien: params.nama_klien,
+			item_deskripsi: params.item_deskripsi,
+			nominal_rupiah: params.nominal_rupiah
+		};
+		return textResult(JSON.stringify(successPayload), {
+			status: "success",
+			payment_url: paymentUrl,
+			invoice_number: invoiceNumber,
+			nama_klien: params.nama_klien,
+			item_deskripsi: params.item_deskripsi,
+			nominal_rupiah: params.nominal_rupiah
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return textResult(`ERROR: Gagal terhubung ke Doku API. Detail: ${message}`, {
+			status: "failed",
+			error: message
+		});
+	}
+}
+/**
+* OpenClaw plugin entry. Used by the OpenClaw Gateway when running with the full
+* harness. The bridge server in paygent-openclaw/server/bridge.ts invokes
+* `executeDokuCreatePaymentLink` directly with the same schema and parameters.
+*/
 var doku_payment_default = definePluginEntry({
 	id: "doku-payment",
 	name: "Doku Payment Gateway",
@@ -190,88 +309,10 @@ var doku_payment_default = definePluginEntry({
 			description: "Gunakan tool ini untuk membuat payment link Doku ketika user meminta untuk menagih seseorang. Ekstrak nama_klien, item_deskripsi, dan nominal_rupiah dari permintaan user.",
 			parameters: DokuPaymentParamsSchema,
 			async execute(_toolCallId, rawParams) {
-				const params = rawParams;
-				const clientId = process.env.DOKU_CLIENT_ID ?? "";
-				const secretKey = process.env.DOKU_SECRET_KEY ?? "";
-				const baseUrl = process.env.DOKU_BASE_URL ?? "https://api-sandbox.doku.com";
-				if (!clientId || !secretKey) return textResult("ERROR: DOKU_CLIENT_ID atau DOKU_SECRET_KEY belum dikonfigurasi di environment variables.", {
-					status: "failed",
-					error: "missing_credentials"
-				});
-				const invoiceNumber = "INV-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-				const requestId = crypto.randomUUID();
-				const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
-				const body = {
-					order: {
-						amount: params.nominal_rupiah,
-						invoice_number: invoiceNumber,
-						currency: "IDR",
-						session_id: crypto.randomUUID()
-					},
-					payment: { payment_due_date: 60 },
-					customer: {
-						name: params.nama_klien,
-						email: "billing@paygent.ai"
-					},
-					line_items: [{
-						id: "ITEM-001",
-						name: params.item_deskripsi,
-						price: params.nominal_rupiah,
-						quantity: 1
-					}]
-				};
-				const headers = {
-					"Client-Id": clientId,
-					"Request-Id": requestId,
-					"Request-Timestamp": timestamp,
-					Signature: `HMACSHA256=${secretKey}`,
-					"Content-Type": "application/json"
-				};
-				try {
-					const response = await fetch(`${baseUrl}/checkout/v1/payment`, {
-						method: "POST",
-						headers,
-						body: JSON.stringify(body),
-						signal: AbortSignal.timeout(3e4)
-					});
-					if (!response.ok) {
-						const errorText = await response.text();
-						return textResult(`ERROR: Doku API mengembalikan status ${response.status}. Detail: ${errorText}`, {
-							status: "failed",
-							error: `http_${response.status}`
-						});
-					}
-					const paymentUrl = (await response.json())?.response?.payment?.url;
-					if (!paymentUrl) return textResult("ERROR: Struktur response Doku tidak dikenal. Field response.payment.url tidak ditemukan.", {
-						status: "failed",
-						error: "unexpected_response_shape"
-					});
-					const successPayload = {
-						success: true,
-						payment_url: paymentUrl,
-						invoice_number: invoiceNumber,
-						nama_klien: params.nama_klien,
-						item_deskripsi: params.item_deskripsi,
-						nominal_rupiah: params.nominal_rupiah
-					};
-					return textResult(JSON.stringify(successPayload), {
-						status: "success",
-						payment_url: paymentUrl,
-						invoice_number: invoiceNumber,
-						nama_klien: params.nama_klien,
-						item_deskripsi: params.item_deskripsi,
-						nominal_rupiah: params.nominal_rupiah
-					});
-				} catch (error) {
-					const message = error instanceof Error ? error.message : String(error);
-					return textResult(`ERROR: Gagal terhubung ke Doku API. Detail: ${message}`, {
-						status: "failed",
-						error: message
-					});
-				}
+				return executeDokuCreatePaymentLink(rawParams);
 			}
 		});
 	}
 });
 //#endregion
-export { doku_payment_default as default };
+export { DokuPaymentParamsSchema, buildDokuSignature, doku_payment_default as default, executeDokuCreatePaymentLink };

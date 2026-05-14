@@ -75,13 +75,17 @@ npm run build
 cd ../..
 ```
 
-### 5. Jalankan OpenClaw Gateway
+### 5. Jalankan PayGent OpenClaw Bridge
 
 ```bash
-openclaw --config ./config/openclaw.json
+cd server
+npm install
+npm start
 ```
 
-Gateway akan berjalan di port 3001 dengan plugin `doku-payment` dan skill `doku-billing` ter-load.
+Bridge akan berjalan di port 3001. Bridge memuat `skills/doku-billing/SKILL.md` sebagai system prompt dan menjalankan `executeDokuCreatePaymentLink` dari plugin TypeScript secara langsung — kode yang sama persis yang juga didaftarkan ke OpenClaw Gateway via `definePluginEntry` di `plugins/doku-payment/index.ts`.
+
+> **Catatan teknis.** OpenClaw 2026.5.7 menyertakan embedded harness yang menyuntikkan ~30 ribu token konteks per turn, melebihi limit Groq free-tier. Bridge ini adalah runner ringan untuk artefak OpenClaw yang sama (SKILL.md + plugin tool) sehingga demo bisa berjalan di environment dengan TPM terbatas. Lihat `docs/OC-3.1-test.md` untuk hasil verifikasi end-to-end (3 skenario, 3 payment link Doku Sandbox real).
 
 ### 6. Jalankan Next.js frontend
 
@@ -95,7 +99,7 @@ npm run dev
 
 ### 7. Buka aplikasi
 
-Akses `http://localhost:3000` di browser. Frontend akan otomatis meng-embed WebChat OpenClaw via iframe.
+Akses `http://localhost:3000` di browser. Frontend akan terhubung ke bridge di `http://localhost:3001/api/message` dan menampilkan chat UI custom (`src/components/ChatWindow.tsx`).
 
 ---
 
@@ -148,7 +152,7 @@ Tiga skenario yang bisa diuji langsung di chat:
 
 - **Real Doku Sandbox API call.** Plugin memanggil endpoint `/checkout/v1/payment` Doku Sandbox secara langsung, lengkap dengan invoice number, session ID, dan payment due time. Tidak ada mocking, tidak ada simulasi — link yang dihasilkan benar-benar bisa dibuka di browser.
 
-- **WebChat embed langsung di Next.js.** Frontend hanya berisi satu `<iframe>` yang di-embed ke `localhost:3001`. Tidak ada custom REST API backend, tidak ada FastAPI server tambahan, tidak ada manajemen sesi sendiri — semua dihandle OpenClaw Gateway.
+- **WebChat embed langsung di Next.js.** Frontend punya custom chat UI (`src/components/ChatWindow.tsx`) yang POST ke `localhost:3001/api/message`. Bridge di `server/` adalah runtime ringan untuk SKILL.md + plugin tool yang sama yang didaftarkan ke OpenClaw Gateway via `definePluginEntry`.
 
 - **Natural language entity extraction.** User tidak perlu mengisi form, memilih dropdown, atau mengikuti template. Tiga entitas wajib (`nama_klien`, `item_deskripsi`, `nominal_rupiah`) diekstrak dari satu kalimat oleh Groq LLaMA-3 70B; konversi unit ("juta", "ribu", "k") ditangani oleh LLM tanpa rule-based parser.
 
@@ -162,13 +166,19 @@ paygent-openclaw/
 │   └── openclaw.json              # OpenClaw Gateway configuration
 ├── plugins/
 │   └── doku-payment/              # TypeScript plugin (Doku integration)
-│       ├── index.ts
+│       ├── index.ts               # definePluginEntry + executeDokuCreatePaymentLink
 │       ├── package.json
 │       ├── tsconfig.json
-│       └── dist/                  # Built JS, loaded by gateway
+│       └── dist/                  # Built JS, loaded by gateway / imported by bridge
 ├── skills/
 │   └── doku-billing/
 │       └── SKILL.md               # Declarative billing workflow
+├── server/                        # Thin HTTP bridge (Express + Groq tool calling)
+│   ├── bridge.ts
+│   ├── package.json
+│   └── tsconfig.json
+├── docs/
+│   └── OC-3.1-test.md             # Live end-to-end test report
 ├── paygent-frontend/              # Next.js 16 + Tailwind CSS frontend
 └── .env.example                   # Template untuk credentials
 ```

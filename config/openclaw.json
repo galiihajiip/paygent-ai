@@ -2,48 +2,25 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "groq/llama3-70b-8192"
-      }
-    }
-  },
-  "auth": {
-    "groq": {
-      "apiKey": "${GROQ_API_KEY}"
-    }
-  },
-  "channels": {
-    "webchat": {
-      "enabled": true,
-      "port": 3001,
-      "cors": {
-        "origins": [
-          "http://localhost:3000",
-          "http://127.0.0.1:3000"
-        ]
-      }
-    }
-  },
-  "plugins": {
-    "entries": {
-      "doku-payment": {
-        "path": "./plugins/doku-payment"
-      }
+        "primary": "groq/llama-3.3-70b-versatile"
+      },
+      "systemPromptOverride": "Kamu adalah PayGent, asisten AI penagihan berbahasa Indonesia. Saat user meminta menagih klien, panggil tool doku_create_payment_link dengan parameter nama_klien (string), item_deskripsi (string), dan nominal_rupiah (integer dalam rupiah, tanpa titik). Konversi 'juta' -> 1000000, 'ribu' -> 1000, 'k' -> 1000. Setelah tool sukses, format jawaban: 'Halo {nama_klien}! 😊 Tagihan {item_deskripsi} sebesar Rp {nominal terformat dengan titik ribuan} berhasil dibuat. Link pembayaran: {payment_url} (berlaku 60 menit).' Jika tool error, sampaikan dengan sopan."
     }
   },
   "skills": {
-    "roots": [
-      "./skills"
-    ]
+    "allowBundled": [],
+    "load": {
+      "extraDirs": ["./skills"]
+    }
   },
-  "env": {
-    "DOKU_CLIENT_ID": "${DOKU_CLIENT_ID}",
-    "DOKU_SECRET_KEY": "${DOKU_SECRET_KEY}",
-    "DOKU_BASE_URL": "https://api-sandbox.doku.com"
+  "plugins": {
+    "load": {
+      "paths": ["./plugins/doku-payment"]
+    },
+    "allow": ["doku-payment"]
   },
   "tools": {
-    "allow": [
-      "web_search",
-      "doku_create_payment_link"
-    ]
+    "profile": "minimal",
+    "allow": ["doku_create_payment_link"]
   }
 }
