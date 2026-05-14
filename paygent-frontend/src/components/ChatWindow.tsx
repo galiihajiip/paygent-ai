@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import MessageBubble from "./MessageBubble";
 import InputBar from "./InputBar";
+import Logo from "./Logo";
+import ThemeToggle from "./ThemeToggle";
 
 interface Message {
   id: string;
@@ -67,7 +69,7 @@ export default function ChatWindow() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
       setError(
-        "Gagal terhubung ke server. Pastikan backend berjalan di port 8000."
+        "Gagal terhubung ke server. Pastikan PayGent bridge berjalan di port 3001."
       );
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
@@ -82,66 +84,61 @@ export default function ChatWindow() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8FAFC]">
-      {/* Header */}
-      <header className="bg-[#0F172A] px-6 py-4 shadow-md flex-shrink-0">
+    <div className="flex flex-col h-[100dvh] bg-[#F8FAFC] dark:bg-[#0B1120] transition-colors duration-200">
+      {/* Header — Responsive */}
+      <header
+        className="
+          bg-white dark:bg-[#0F172A]
+          border-b border-[#E2E8F0] dark:border-[#1E293B]
+          px-4 sm:px-6 py-3 sm:py-4
+          flex-shrink-0
+          shadow-sm
+        "
+      >
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#2563EB] rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">PG</span>
+          <Logo size={36} showText={true} />
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Status badge — sembunyikan di mobile kecil */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-[#F0FDF4] dark:bg-[#052e16] px-3 py-1.5 rounded-full border border-[#BBF7D0] dark:border-[#166534]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
+              <span className="text-[#16A34A] dark:text-[#4ade80] text-xs font-medium">
+                Agent Online
+              </span>
             </div>
-            <div>
-              <h1 className="text-white font-semibold text-base leading-tight">
-                PayGent
-              </h1>
-              <p className="text-[#94A3B8] text-xs">
-                Auto-Biller AI · Powered by Doku
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
-            <span className="text-[#94A3B8] text-xs">Online</span>
+            {/* Status dot — hanya di mobile */}
+            <span className="sm:hidden w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-[#FEF2F2] border-b border-[#FECACA] px-6 py-3 flex-shrink-0">
-          <p className="text-[#EF4444] text-sm text-center max-w-3xl mx-auto">
-            {error}
+        <div className="bg-[#FEF2F2] dark:bg-[#450a0a] border-b border-[#FECACA] dark:border-[#7f1d1d] px-4 py-2.5 flex-shrink-0">
+          <p className="text-[#DC2626] dark:text-[#fca5a5] text-sm text-center max-w-3xl mx-auto">
+            ⚠️ {error}
           </p>
         </div>
       )}
 
-      {/* Chat Messages Area */}
-      <main className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto">
+      {/* Messages Area — Responsive padding */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
           ))}
 
-          {/* Loading Indicator */}
+          {/* Loading dots */}
           {isLoading && (
-            <div className="flex justify-start items-start gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
+            <div className="flex justify-start items-start gap-2 sm:gap-3 mb-4">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-[10px] sm:text-xs font-bold flex-shrink-0 mt-1">
                 PG
               </div>
-              <div className="bg-white border border-[#E2E8F0] px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm">
+              <div className="bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm">
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className="w-2 h-2 rounded-full bg-[#2563EB] animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 rounded-full bg-[#2563EB] animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 rounded-full bg-[#2563EB] animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
+                  <span className="w-2 h-2 rounded-full bg-[#2563EB] dark:bg-[#3B82F6] animate-bounce [animation-delay:0ms]" />
+                  <span className="w-2 h-2 rounded-full bg-[#2563EB] dark:bg-[#3B82F6] animate-bounce [animation-delay:150ms]" />
+                  <span className="w-2 h-2 rounded-full bg-[#2563EB] dark:bg-[#3B82F6] animate-bounce [animation-delay:300ms]" />
                 </div>
               </div>
             </div>
