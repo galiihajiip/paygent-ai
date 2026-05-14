@@ -1,0 +1,49 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "groq/llama3-70b-8192"
+      }
+    }
+  },
+  "auth": {
+    "groq": {
+      "apiKey": "${GROQ_API_KEY}"
+    }
+  },
+  "channels": {
+    "webchat": {
+      "enabled": true,
+      "port": 3001,
+      "cors": {
+        "origins": [
+          "http://localhost:3000",
+          "http://127.0.0.1:3000"
+        ]
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "doku-payment": {
+        "path": "./plugins/doku-payment"
+      }
+    }
+  },
+  "skills": {
+    "roots": [
+      "./skills"
+    ]
+  },
+  "env": {
+    "DOKU_CLIENT_ID": "${DOKU_CLIENT_ID}",
+    "DOKU_SECRET_KEY": "${DOKU_SECRET_KEY}",
+    "DOKU_BASE_URL": "https://api-sandbox.doku.com"
+  },
+  "tools": {
+    "allow": [
+      "web_search",
+      "doku_create_payment_link"
+    ]
+  }
+}
