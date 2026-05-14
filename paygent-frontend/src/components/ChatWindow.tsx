@@ -40,7 +40,7 @@ export default function ChatWindow() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const response = await fetch("http://localhost:3001/api/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
@@ -51,11 +51,17 @@ export default function ChatWindow() {
       }
 
       const data = await response.json();
+      // OpenClaw Gateway format: { message: string } atau { content: [{ text: string }] }
+      const assistantReply =
+        data.message ??
+        data.content?.[0]?.text ??
+        data.reply ??
+        "Maaf, format respons tidak dikenali.";
 
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: data.reply,
+        content: assistantReply,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
