@@ -97,7 +97,7 @@ export default function MessageBubble({ role, content }: MessageBubbleProps) {
   if (role === "user") {
     return (
       <div className="flex justify-end mb-4">
-        <div className="max-w-[75%] bg-[#0F172A] text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm">
+        <div className="max-w-[75%] bg-[#0F172A] dark:bg-[#2563EB] text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm">
           {formatContent(content)}
         </div>
       </div>
@@ -128,7 +128,7 @@ export default function MessageBubble({ role, content }: MessageBubbleProps) {
       <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
         PG
       </div>
-      <div className="max-w-[75%] bg-white border border-[#E2E8F0] text-[#0F172A] px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm">
+      <div className="max-w-[75%] bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] text-[#0F172A] dark:text-[#F1F5F9] px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm">
         {formatContent(content)}
       </div>
     </div>

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import InputBar from "./InputBar";
 import Logo from "./Logo";
@@ -25,6 +28,8 @@ export default function ChatWindow() {
   const [error, setError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const autoSentRef = useRef<boolean>(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,6 +102,16 @@ export default function ChatWindow() {
     [messages],
   );
 
+  // If we arrive at /chat?prompt=..., auto-send that prompt once.
+  useEffect(() => {
+    if (autoSentRef.current) return;
+    const prompt = searchParams.get("prompt");
+    if (prompt && prompt.trim()) {
+      autoSentRef.current = true;
+      handleSendMessage(prompt.trim());
+    }
+  }, [searchParams, handleSendMessage]);
+
   return (
     <div className="flex flex-col h-[100dvh] bg-[#F8FAFC] dark:bg-[#0B1120] transition-colors duration-200">
       {/* Header — Responsive */}
@@ -110,7 +125,16 @@ export default function ChatWindow() {
         "
       >
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Logo size={36} showText={true} />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/"
+              aria-label="Kembali ke landing"
+              className="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center bg-[#F1F5F9] hover:bg-[#E2E8F0] dark:bg-[#1E293B] dark:hover:bg-[#334155] text-[#64748B] dark:text-[#94A3B8] transition-colors duration-200"
+            >
+              <ArrowLeft size={16} />
+            </Link>
+            <Logo size={36} showText={true} />
+          </div>
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Status badge — sembunyikan di mobile kecil */}
             <div className="hidden sm:flex items-center gap-1.5 bg-[#F0FDF4] dark:bg-[#052e16] px-3 py-1.5 rounded-full border border-[#BBF7D0] dark:border-[#166534]">
