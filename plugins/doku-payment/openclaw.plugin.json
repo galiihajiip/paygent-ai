@@ -1,0 +1,10 @@
+{
+  "id": "doku-payment",
+  "name": "Doku Payment Gateway",
+  "description": "Membuat payment link Doku Sandbox untuk penagihan klien via AI agent",
+  "version": "1.0.0",
+  "entry": "./dist/index.js",
+  "compat": {
+    "pluginApi": ">=2026.3.24-beta.2"
+  }
+}

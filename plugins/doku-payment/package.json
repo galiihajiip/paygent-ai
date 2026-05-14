@@ -1,0 +1,27 @@
+{
+  "name": "@paygent/openclaw-doku-payment",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsdown index.ts --format esm --out-dir dist",
+    "dev": "tsdown index.ts --format esm --out-dir dist --watch"
+  },
+  "openclaw": {
+    "extensions": ["./dist/index.js"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2"
+    }
+  },
+  "dependencies": {
+    "openclaw": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "tsdown": "latest"
+  }
+}
