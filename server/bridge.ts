@@ -114,9 +114,13 @@ interface ChatMessage {
   }[];
 }
 
-async function runAgent(userMessage: string): Promise<string> {
+async function runAgent(
+  userMessage: string,
+  history: { role: "user" | "assistant"; content: string }[] = [],
+): Promise<string> {
   const messages: ChatMessage[] = [
     { role: "system", content: SKILL_PROMPT },
+    ...history.map((h) => ({ role: h.role, content: h.content })),
     { role: "user", content: userMessage },
   ];
 
@@ -224,8 +228,25 @@ app.post("/api/message", async (req, res) => {
     return;
   }
 
+  // Optional conversation history. Each entry must be { role, content }
+  // where role is "user" or "assistant". Anything else is filtered out.
+  const rawHistory = Array.isArray(req.body?.history) ? req.body.history : [];
+  const history: { role: "user" | "assistant"; content: string }[] = [];
+  for (const entry of rawHistory) {
+    if (
+      entry &&
+      typeof entry === "object" &&
+      typeof entry.content === "string" &&
+      (entry.role === "user" || entry.role === "assistant")
+    ) {
+      history.push({ role: entry.role, content: entry.content });
+    }
+  }
+  // Hard cap: last 20 turns (prevents unbounded prompt growth).
+  const trimmedHistory = history.slice(-20);
+
   try {
-    const reply = await runAgent(userMessage);
+    const reply = await runAgent(userMessage, trimmedHistory);
     res.json({ message: reply });
   } catch (error: unknown) {
     const detail =

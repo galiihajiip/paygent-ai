@@ -30,58 +30,72 @@ export default function ChatWindow() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  const handleSendMessage = useCallback(async (userMessage: string) => {
-    const newUserMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: userMessage,
-    };
+  const handleSendMessage = useCallback(
+    async (userMessage: string) => {
+      const newUserMessage: Message = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: userMessage,
+      };
 
-    setMessages((prev) => [...prev, newUserMessage]);
-    setIsLoading(true);
-    setError(null);
+      // Snapshot the prior conversation BEFORE the optimistic UI update.
+      // We send this to the bridge so the agent remembers context.
+      // - Skip the synthetic "welcome-0" UI greeting (it's not part of the real chat).
+      // - Skip earlier error placeholders (id starts with "error-").
+      const historyForServer = messages
+        .filter((m) => m.id !== "welcome-0" && !m.id.startsWith("error-"))
+        .map((m) => ({ role: m.role, content: m.content }));
 
-    try {
-      const response = await fetch("http://localhost:3001/api/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
-      });
+      setMessages((prev) => [...prev, newUserMessage]);
+      setIsLoading(true);
+      setError(null);
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+      try {
+        const response = await fetch("http://localhost:3001/api/message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: userMessage,
+            history: historyForServer,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        // OpenClaw Gateway format: { message: string } atau { content: [{ text: string }] }
+        const assistantReply =
+          data.message ??
+          data.content?.[0]?.text ??
+          data.reply ??
+          "Maaf, format respons tidak dikenali.";
+
+        const assistantMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: assistantReply,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch {
+        setError(
+          "Gagal terhubung ke server. Pastikan PayGent bridge berjalan di port 3001."
+        );
+        const errorMessage: Message = {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content:
+            "⚠️ Maaf, saya tidak dapat terhubung ke server saat ini. Silakan coba beberapa saat lagi.",
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
       }
-
-      const data = await response.json();
-      // OpenClaw Gateway format: { message: string } atau { content: [{ text: string }] }
-      const assistantReply =
-        data.message ??
-        data.content?.[0]?.text ??
-        data.reply ??
-        "Maaf, format respons tidak dikenali.";
-
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: assistantReply,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
-      setError(
-        "Gagal terhubung ke server. Pastikan PayGent bridge berjalan di port 3001."
-      );
-      const errorMessage: Message = {
-        id: `error-${Date.now()}`,
-        role: "assistant",
-        content:
-          "⚠️ Maaf, saya tidak dapat terhubung ke server saat ini. Silakan coba beberapa saat lagi.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [messages],
+  );
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#F8FAFC] dark:bg-[#0B1120] transition-colors duration-200">
