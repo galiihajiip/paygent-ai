@@ -8,6 +8,13 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "PayGent – Auto-Biller AI",
   description: "Asisten penagihan berbasis AI yang proaktif.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "PayGent",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PayGent",
+  },
 };
 
 export default function RootLayout({
