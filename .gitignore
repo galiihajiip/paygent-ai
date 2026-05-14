@@ -1,0 +1,8 @@
+paygent-backend/.env
+paygent-frontend/.env.local
+__pycache__/
+.venv/
+node_modules/
+
+# OpenClaw local workspace state
+.openclaw/
