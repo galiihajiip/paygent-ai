@@ -245,6 +245,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: reply });
   } catch (error: any) {
     console.error("[Next API] agent error:", error);
-    return NextResponse.json({ message: \`Kesalahan internal: \${error.message}\` }, { status: 500 });
+    return NextResponse.json({ message: `Kesalahan internal: ${error.message}` }, { status: 500 });
   }
 }
