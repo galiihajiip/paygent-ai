@@ -70,8 +70,12 @@ function tryParseInvoiceData(content: string): InvoiceData | null {
 }
 
 function formatContent(text: string): React.ReactNode {
+  const cleanText = text
+    .replace(/\*\*/g, "")
+    .replace(/(^|\s)\*(?=\S)/g, "$1")
+    .replace(/(?<=\S)\*(\s|$)/g, "$1");
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
+  const parts = cleanText.split(urlRegex);
 
   return parts.map((part, index) => {
     if (urlRegex.test(part)) {
@@ -94,18 +98,23 @@ function formatContent(text: string): React.ReactNode {
 }
 
 export default function MessageBubble({ role, content }: MessageBubbleProps) {
+  const cleanContent = content
+    .replace(/\*\*/g, "")
+    .replace(/(^|\s)\*(?=\S)/g, "$1")
+    .replace(/(?<=\S)\*(\s|$)/g, "$1");
+
   if (role === "user") {
     return (
       <div className="flex justify-end mb-4">
         <div className="max-w-[75%] bg-[#0F172A] dark:bg-[#2563EB] text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-sm">
-          {formatContent(content)}
+          {formatContent(cleanContent)}
         </div>
       </div>
     );
   }
 
   // Coba parse invoice data jika ini adalah pesan assistant
-  const invoiceData = tryParseInvoiceData(content);
+  const invoiceData = tryParseInvoiceData(cleanContent);
 
   if (invoiceData) {
     return (
@@ -129,7 +138,7 @@ export default function MessageBubble({ role, content }: MessageBubbleProps) {
         PG
       </div>
       <div className="max-w-[75%] bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] text-[#0F172A] dark:text-[#F1F5F9] px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm">
-        {formatContent(content)}
+        {formatContent(cleanContent)}
       </div>
     </div>
   );
