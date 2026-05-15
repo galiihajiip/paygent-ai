@@ -135,8 +135,9 @@ export default function MessageBubble({ role, content }: MessageBubbleProps) {
     );
   }
 
-  // Coba parse invoice data jika ini adalah pesan assistant
-  const invoiceData = tryParseInvoiceData(cleanContent);
+  // Coba parse invoice data dari content ASLI (sebelum strip metadata tag)
+  // agar <!-- INVOICE_DATA:{...} --> masih bisa di-parse.
+  const invoiceData = tryParseInvoiceData(content);
 
   if (invoiceData) {
     return (
