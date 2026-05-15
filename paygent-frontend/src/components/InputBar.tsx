@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Mic, MicOff } from "lucide-react";
 
 interface InputBarProps {
@@ -48,14 +48,21 @@ function getRecognitionCtor(): SpeechRecognitionCtor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+function subscribeToStaticBrowserCapability() {
+  return () => {};
+}
+
 export default function InputBar({ onSendMessage, isLoading }: InputBarProps) {
   const [inputValue, setInputValue] = useState<string>("");
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [voiceSupported, setVoiceSupported] = useState<boolean>(false);
+  const voiceSupported = useSyncExternalStore(
+    subscribeToStaticBrowserCapability,
+    () => getRecognitionCtor() !== null,
+    () => false,
+  );
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
-    setVoiceSupported(getRecognitionCtor() !== null);
     return () => {
       try {
         recognitionRef.current?.stop();

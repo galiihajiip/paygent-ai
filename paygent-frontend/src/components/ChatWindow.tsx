@@ -22,6 +22,9 @@ const welcomeMessage: Message = {
     'Halo! 👋 Saya PayGent, asisten penagihan AI Anda. Cukup beritahu saya siapa yang ingin Anda tagih, untuk apa, dan berapa nominalnya. Contoh: "Tagihkan CV Sentosa Digital 3 juta untuk jasa pembuatan website."',
 };
 
+const openclawUrl =
+  process.env.NEXT_PUBLIC_OPENCLAW_URL ?? "http://localhost:3001";
+
 export default function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -56,7 +59,7 @@ export default function ChatWindow() {
       setError(null);
 
       try {
-        const response = await fetch("http://localhost:3001/api/message", {
+        const response = await fetch(`${openclawUrl}/api/message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -108,7 +111,10 @@ export default function ChatWindow() {
     const prompt = searchParams.get("prompt");
     if (prompt && prompt.trim()) {
       autoSentRef.current = true;
-      handleSendMessage(prompt.trim());
+      const timeoutId = window.setTimeout(() => {
+        handleSendMessage(prompt.trim());
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
   }, [searchParams, handleSendMessage]);
 
