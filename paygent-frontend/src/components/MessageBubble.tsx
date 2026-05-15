@@ -39,14 +39,11 @@ function tryParseInvoiceData(content: string): InvoiceData | null {
 
   // Pattern matching hanya untuk respons pembuatan tagihan baru.
   // Jangan ubah jawaban konteks yang kebetulan menyebut URL Doku menjadi InvoiceCard.
-  const isCreateInvoiceReply = /tagihan berhasil dibuat/i.test(content);
-  if (!isCreateInvoiceReply) return null;
-
-  const urlMatch = content.match(/https?:\/\/[^\s]+doku[^\s]+/i);
+  const urlMatch = content.match(/https?:\/\/[^\s"']+doku[^\s"']+/i);
   const invoiceMatch = content.match(/INV-[A-Z0-9]+/i);
   const nominalMatch = content.match(/Rp\s*([\d.,]+)/i);
 
-  if (urlMatch) {
+  if (urlMatch && invoiceMatch) {
     // Extract nominal
     let nominal = 0;
     if (nominalMatch) {
@@ -54,10 +51,11 @@ function tryParseInvoiceData(content: string): InvoiceData | null {
       if (isNaN(nominal)) nominal = 0;
     }
 
-    // Extract nama klien (teks setelah "Halo" atau "kepada")
+    // Extract nama klien (teks setelah "Halo", "kepada", atau "untuk")
     const namaMatch =
       content.match(/(?:Halo[,!]?\s*\*?\*?)([^!,\n]+)/i) ??
-      content.match(/(?:kepada\s+)([^\s,!.]+(?:\s+[^\s,!.]+)?)/i);
+      content.match(/(?:kepada\s+)([^\s,!.]+(?:\s+[^\s,!.]+)?)/i) ??
+      content.match(/(?:untuk\s+)([\w\s]+?)(?:[:.,]|$)/i);
 
     return {
       namaKlien:
