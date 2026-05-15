@@ -7,7 +7,7 @@ import {
   executeDokuCreatePaymentLink,
   buildDokuSignature,
   type DokuPaymentParams,
-} from "@paygent/openclaw-doku-payment";
+} from "@/lib/doku-payment";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? "";
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
 
       messages.push(msg);
 
-      for (const tc of toolCalls) {
+      for (const tc of toolCalls as any[]) {
         let toolOutputText = "";
         if (tc.function.name === "doku_create_payment_link") {
           let params: DokuPaymentParams;

@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { join } from "path";
 import { tmpdir } from "os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { buildDokuSignature } from "@paygent/openclaw-doku-payment";
+import { buildDokuSignature } from "@/lib/doku-payment";
 
 const INVOICE_STORE_PATH = join(tmpdir(), "openclaw-invoices.json");
 

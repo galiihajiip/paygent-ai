@@ -16,7 +16,8 @@
     "next-themes": "^0.4.6",
     "openai": "^6.37.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "typebox": "^1.1.38"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

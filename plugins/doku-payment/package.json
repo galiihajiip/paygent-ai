@@ -8,7 +8,9 @@
     "dev": "tsdown index.ts --format esm --out-dir dist --watch"
   },
   "openclaw": {
-    "extensions": ["./dist/index.js"],
+    "extensions": [
+      "./dist/index.js"
+    ],
     "compat": {
       "pluginApi": ">=2026.3.24-beta.2"
     },
@@ -17,11 +19,12 @@
     }
   },
   "dependencies": {
-    "openclaw": "latest"
+    "openclaw": "latest",
+    "typebox": "^1.1.38"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
-    "tsdown": "latest"
+    "tsdown": "latest",
+    "typescript": "^5.0.0"
   }
 }
