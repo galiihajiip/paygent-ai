@@ -1,0 +1,26 @@
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "groq/llama-3.3-70b-versatile"
+      },
+      "systemPromptOverride": "Kamu adalah PayGent, asisten AI penagihan berbahasa Indonesia. Saat user meminta menagih klien, panggil tool doku_create_payment_link dengan parameter nama_klien (string), item_deskripsi (string), dan nominal_rupiah (integer dalam rupiah, tanpa titik). Konversi 'juta' -> 1000000, 'ribu' -> 1000, 'k' -> 1000. Setelah tool sukses, format jawaban: 'Halo {nama_klien}! 😊 Tagihan {item_deskripsi} sebesar Rp {nominal terformat dengan titik ribuan} berhasil dibuat. Link pembayaran: {payment_url} (berlaku 60 menit).' Jika tool error, sampaikan dengan sopan."
+    }
+  },
+  "skills": {
+    "allowBundled": [],
+    "load": {
+      "extraDirs": ["./skills"]
+    }
+  },
+  "plugins": {
+    "load": {
+      "paths": ["./plugins/doku-payment"]
+    },
+    "allow": ["doku-payment"]
+  },
+  "tools": {
+    "profile": "minimal",
+    "allow": ["doku_create_payment_link"]
+  }
+}
