@@ -17,12 +17,13 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import OpenAI from "openai";
 import { config as loadDotenv } from "dotenv";
 import {
+  buildDokuSignature,
   executeDokuCreatePaymentLink,
   type DokuPaymentParams,
 } from "@paygent/openclaw-doku-payment";
@@ -38,6 +39,7 @@ const PORT = Number(process.env.OPENCLAW_BRIDGE_PORT ?? 3001);
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? "";
 const GROQ_MODEL =
   process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+const INVOICE_STORE_PATH = join(__dirname, "data", "invoices.json");
 
 if (!GROQ_API_KEY) {
   console.error(
@@ -63,6 +65,88 @@ function loadSkillSystemPrompt(): string {
 }
 
 const SKILL_PROMPT = loadSkillSystemPrompt();
+
+// -- Minimal invoice status store ---------------------------------------------
+
+type InvoiceStatus = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "UNKNOWN";
+
+interface StoredInvoice {
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  namaKlien?: string;
+  itemDeskripsi?: string;
+  nominalRupiah?: number;
+  paymentUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string | null;
+  rawNotification?: unknown;
+}
+
+function loadInvoiceStore(): Record<string, StoredInvoice> {
+  if (!existsSync(INVOICE_STORE_PATH)) return {};
+
+  try {
+    return JSON.parse(readFileSync(INVOICE_STORE_PATH, "utf8")) as Record<
+      string,
+      StoredInvoice
+    >;
+  } catch {
+    return {};
+  }
+}
+
+function saveInvoiceStore(store: Record<string, StoredInvoice>) {
+  mkdirSync(dirname(INVOICE_STORE_PATH), { recursive: true });
+  writeFileSync(INVOICE_STORE_PATH, JSON.stringify(store, null, 2));
+}
+
+function upsertInvoice(invoice: StoredInvoice) {
+  const store = loadInvoiceStore();
+  const previous = store[invoice.invoiceNumber];
+  store[invoice.invoiceNumber] = {
+    ...previous,
+    ...invoice,
+    createdAt: previous?.createdAt ?? invoice.createdAt,
+    updatedAt: new Date().toISOString(),
+  };
+  saveInvoiceStore(store);
+}
+
+function saveCreatedInvoiceFromToolOutput(toolOutputText: string) {
+  try {
+    const parsed = JSON.parse(toolOutputText) as Record<string, unknown>;
+    if (
+      parsed.success !== true ||
+      typeof parsed.invoice_number !== "string"
+    ) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    upsertInvoice({
+      invoiceNumber: parsed.invoice_number,
+      status: "PENDING",
+      namaKlien:
+        typeof parsed.nama_klien === "string" ? parsed.nama_klien : undefined,
+      itemDeskripsi:
+        typeof parsed.item_deskripsi === "string"
+          ? parsed.item_deskripsi
+          : undefined,
+      nominalRupiah:
+        typeof parsed.nominal_rupiah === "number"
+          ? parsed.nominal_rupiah
+          : undefined,
+      paymentUrl:
+        typeof parsed.payment_url === "string" ? parsed.payment_url : undefined,
+      createdAt: now,
+      updatedAt: now,
+      paidAt: null,
+    });
+  } catch {
+    // Non-JSON tool output means there is no invoice to persist.
+  }
+}
 
 // -- Tool schema exposed to Groq (OpenAI-compatible function calling) ---------
 
@@ -116,6 +200,19 @@ function isContextQuestion(userMessage: string): boolean {
   return contextPatterns.some((pattern) => pattern.test(text));
 }
 
+function isPaymentStatusQuestion(userMessage: string): boolean {
+  const text = normalizeIntentText(userMessage);
+
+  return [
+    /\b(sudah|udah|telah)\s+(di)?bayar\b/,
+    /\b(belum|blm)\s+(di)?bayar\b/,
+    /\bpaid\b|\bunpaid\b/,
+    /\bstatus\b.*\b(pembayaran|bayar|tagihan|invoice)\b/,
+    /\bcek\b.*\b(pembayaran|bayar|status)\b/,
+    /\btahu\b.*\b(dibayar|bayar|status)\b/,
+  ].some((pattern) => pattern.test(text));
+}
+
 function hasCreateBillingIntent(text: string): boolean {
   return [
     "tagih",
@@ -130,6 +227,122 @@ function hasCreateBillingIntent(text: string): boolean {
     "kirim bill",
     "request pembayaran",
   ].some((phrase) => text.includes(phrase));
+}
+
+function formatRupiah(amount?: number): string {
+  if (typeof amount !== "number" || !Number.isFinite(amount)) return "-";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function parseInvoiceFromText(content: string): Partial<StoredInvoice> | null {
+  const invoiceNumber = content.match(/INV-[A-Z0-9]+/i)?.[0]?.toUpperCase();
+  if (!invoiceNumber) return null;
+
+  const nominalText = content.match(/Rp\s*([\d.,]+)/i)?.[1];
+  const nominalRupiah = nominalText
+    ? Number.parseInt(nominalText.replace(/[.,]/g, ""), 10)
+    : undefined;
+  const paymentUrl = content.match(/https?:\/\/[^\s]+doku[^\s]+/i)?.[0];
+  const namaKlien =
+    content.match(/Halo,\s*([^!\n]+)/i)?.[1]?.trim() ??
+    content.match(/Tagihan Kepada\s+([^\n]+)/i)?.[1]?.trim();
+  const itemDeskripsi =
+    content.match(/Item:\s*([^\n]+)/i)?.[1]?.trim() ??
+    content.match(/Deskripsi\s+([^\n]+)/i)?.[1]?.trim();
+
+  return {
+    invoiceNumber,
+    namaKlien,
+    itemDeskripsi,
+    nominalRupiah: Number.isFinite(nominalRupiah)
+      ? nominalRupiah
+      : undefined,
+    paymentUrl,
+  };
+}
+
+function findLatestInvoiceFromHistory(
+  history: { role: "user" | "assistant"; content: string }[],
+): StoredInvoice | null {
+  const store = loadInvoiceStore();
+
+  for (const entry of history.slice().reverse()) {
+    const parsed = parseInvoiceFromText(entry.content);
+    if (!parsed?.invoiceNumber) continue;
+
+    const stored = store[parsed.invoiceNumber];
+    if (stored) {
+      return {
+        ...stored,
+        namaKlien: stored.namaKlien ?? parsed.namaKlien,
+        itemDeskripsi: stored.itemDeskripsi ?? parsed.itemDeskripsi,
+        nominalRupiah: stored.nominalRupiah ?? parsed.nominalRupiah,
+        paymentUrl: stored.paymentUrl ?? parsed.paymentUrl,
+      };
+    }
+
+    const now = new Date().toISOString();
+    return {
+      invoiceNumber: parsed.invoiceNumber,
+      status: "PENDING",
+      namaKlien: parsed.namaKlien,
+      itemDeskripsi: parsed.itemDeskripsi,
+      nominalRupiah: parsed.nominalRupiah,
+      paymentUrl: parsed.paymentUrl,
+      createdAt: now,
+      updatedAt: now,
+      paidAt: null,
+    };
+  }
+
+  const latestStored = Object.values(store).sort((a, b) =>
+    b.updatedAt.localeCompare(a.updatedAt),
+  )[0];
+  return latestStored ?? null;
+}
+
+function buildStatusReply(invoice: StoredInvoice | null): string {
+  if (!invoice) {
+    return "Saya belum menemukan invoice di percakapan ini. Coba kirim nomor invoice-nya, misalnya INV-462112AB, atau buat tagihan baru dulu.";
+  }
+
+  if (invoice.status === "PAID") {
+    return [
+      `Tagihan ${invoice.invoiceNumber} sudah dibayar.`,
+      "",
+      `Status: PAID`,
+      `Klien: ${invoice.namaKlien ?? "-"}`,
+      `Nominal: ${formatRupiah(invoice.nominalRupiah)}`,
+      invoice.paidAt ? `Waktu pembayaran: ${invoice.paidAt}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (invoice.status === "FAILED" || invoice.status === "EXPIRED") {
+    return [
+      `Tagihan ${invoice.invoiceNumber} belum berhasil dibayar.`,
+      "",
+      `Status: ${invoice.status}`,
+      `Klien: ${invoice.namaKlien ?? "-"}`,
+      `Nominal: ${formatRupiah(invoice.nominalRupiah)}`,
+      "Silakan buat payment link baru jika link sebelumnya sudah tidak bisa dipakai.",
+    ].join("\n");
+  }
+
+  return [
+    `Tagihan ${invoice.invoiceNumber} belum terkonfirmasi dibayar.`,
+    "",
+    `Status: PENDING`,
+    `Klien: ${invoice.namaKlien ?? "-"}`,
+    `Nominal: ${formatRupiah(invoice.nominalRupiah)}`,
+    "Artinya: PayGent sudah membuat payment link, tetapi belum menerima notifikasi pembayaran sukses dari Doku.",
+    "Kalau customer baru saja membayar, tunggu webhook Doku masuk. Untuk demo, status juga bisa dicek di dashboard Doku Sandbox.",
+  ].join("\n");
 }
 
 function isLikelyClarificationAnswer(
@@ -251,6 +464,7 @@ async function runAgent(
 
         const result = await executeDokuCreatePaymentLink(params);
         toolOutputText = result.content[0]?.text ?? "";
+        saveCreatedInvoiceFromToolOutput(toolOutputText);
       } else {
         toolOutputText = `ERROR: Tool ${name} tidak dikenal.`;
       }
@@ -275,6 +489,107 @@ app.use(
     credentials: true,
   }),
 );
+
+function getHeader(req: express.Request, name: string): string {
+  const value = req.header(name);
+  return typeof value === "string" ? value : "";
+}
+
+function verifyDokuWebhookSignature(
+  req: express.Request,
+  rawBody: string,
+): boolean {
+  const clientId = getHeader(req, "Client-Id");
+  const requestId = getHeader(req, "Request-Id");
+  const requestTimestamp = getHeader(req, "Request-Timestamp");
+  const signature = getHeader(req, "Signature");
+
+  if (!clientId || !requestId || !requestTimestamp || !signature) {
+    return false;
+  }
+
+  const expected = buildDokuSignature({
+    clientId,
+    secretKey: process.env.DOKU_SECRET_KEY ?? "",
+    requestId,
+    requestTimestamp,
+    requestTarget: req.path,
+    bodyStr: rawBody,
+  });
+
+  return signature === expected;
+}
+
+function mapDokuStatus(status: string | undefined): InvoiceStatus {
+  const normalized = status?.toUpperCase();
+  if (normalized === "SUCCESS") return "PAID";
+  if (normalized === "FAILED") return "FAILED";
+  if (normalized === "EXPIRED") return "EXPIRED";
+  return "UNKNOWN";
+}
+
+app.post(
+  "/api/doku/webhook",
+  express.raw({ type: "application/json", limit: "256kb" }),
+  (req, res) => {
+    const rawBody = Buffer.isBuffer(req.body)
+      ? req.body.toString("utf8")
+      : "";
+
+    if (process.env.DOKU_WEBHOOK_VERIFY !== "false") {
+      const signatureOk = verifyDokuWebhookSignature(req, rawBody);
+      if (!signatureOk) {
+        res.status(401).json({ ok: false, error: "invalid_signature" });
+        return;
+      }
+    }
+
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(rawBody) as Record<string, unknown>;
+    } catch {
+      res.status(400).json({ ok: false, error: "invalid_json" });
+      return;
+    }
+
+    const order = payload.order as
+      | { invoice_number?: string; amount?: number }
+      | undefined;
+    const transaction = payload.transaction as
+      | { status?: string; date?: string }
+      | undefined;
+
+    const invoiceNumber = order?.invoice_number?.toUpperCase();
+    if (!invoiceNumber) {
+      res.status(202).json({ ok: true, ignored: "missing_invoice_number" });
+      return;
+    }
+
+    const store = loadInvoiceStore();
+    const previous = store[invoiceNumber];
+    const now = new Date().toISOString();
+    const status = mapDokuStatus(transaction?.status);
+
+    upsertInvoice({
+      invoiceNumber,
+      status,
+      namaKlien: previous?.namaKlien,
+      itemDeskripsi: previous?.itemDeskripsi,
+      nominalRupiah:
+        typeof order?.amount === "number"
+          ? order.amount
+          : previous?.nominalRupiah,
+      paymentUrl: previous?.paymentUrl,
+      createdAt: previous?.createdAt ?? now,
+      updatedAt: now,
+      paidAt: status === "PAID" ? transaction?.date ?? now : previous?.paidAt,
+      rawNotification: payload,
+    });
+
+    res.json({ ok: true });
+  },
+);
+
 app.use(express.json({ limit: "256kb" }));
 
 app.get("/", (_req, res) => {
@@ -315,6 +630,12 @@ app.post("/api/message", async (req, res) => {
   const trimmedHistory = history.slice(-20);
 
   try {
+    if (isPaymentStatusQuestion(userMessage)) {
+      const invoice = findLatestInvoiceFromHistory(trimmedHistory);
+      res.json({ message: buildStatusReply(invoice) });
+      return;
+    }
+
     const reply = await runAgent(userMessage, trimmedHistory);
     res.json({ message: reply });
   } catch (error: unknown) {
