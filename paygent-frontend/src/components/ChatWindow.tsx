@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import InputBar from "./InputBar";
 import Logo from "./Logo";
@@ -151,6 +151,14 @@ export default function ChatWindow() {
             </div>
             {/* Status dot — hanya di mobile */}
             <span className="sm:hidden w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
+            <Link
+              href="/dashboard"
+              aria-label="Buka CFO Dashboard"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#F1F5F9] px-3 text-xs font-semibold text-[#64748B] transition-colors duration-200 hover:bg-[#E2E8F0] hover:text-[#0F172A] dark:bg-[#1E293B] dark:text-[#94A3B8] dark:hover:bg-[#334155] dark:hover:text-[#F8FAFC]"
+            >
+              <BarChart3 size={15} />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
             <ThemeToggle />
           </div>
         </div>

@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   BarChart3,
   Bot,
   CheckCircle2,
   Clock3,
-  Home,
   MessageSquareText,
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import AppNav from "../../components/AppNav";
 
 const kpis = [
   {
@@ -109,8 +107,10 @@ export default function DashboardPage() {
   const [showFollowUp, setShowFollowUp] = useState(false);
 
   return (
-    <main className="min-h-[100dvh] bg-[#F8FAFC] px-4 py-5 text-[#0F172A] transition-colors dark:bg-[#0B1120] dark:text-[#F8FAFC] sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-[100dvh] bg-[#F8FAFC] text-[#0F172A] transition-colors dark:bg-[#0B1120] dark:text-[#F8FAFC]">
+      <AppNav />
+      <main className="px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm dark:border-[#1E293B] dark:bg-[#0F172A] sm:p-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
@@ -126,22 +126,6 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <nav className="flex flex-wrap gap-2">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#CBD5E1] bg-white px-4 py-2 text-sm font-medium text-[#334155] transition-colors hover:bg-[#F1F5F9] dark:border-[#334155] dark:bg-[#1E293B] dark:text-[#CBD5E1] dark:hover:bg-[#334155]"
-            >
-              <Home size={16} />
-              Home
-            </Link>
-            <Link
-              href="/chat"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#1D4ED8]"
-            >
-              <ArrowLeft size={16} />
-              Chat Assistant
-            </Link>
-          </nav>
         </header>
 
         <section className="mb-6 grid gap-4 md:grid-cols-3">
@@ -297,7 +281,8 @@ export default function DashboardPage() {
         <p className="py-6 text-center text-xs text-[#94A3B8] dark:text-[#64748B]">
           Mock dashboard for PayGent roadmap demo - no backend calls.
         </p>
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }

@@ -7,8 +7,7 @@ import {
   Moon,
   ShieldCheck,
 } from "lucide-react";
-import Logo from "../components/Logo";
-import ThemeToggle from "../components/ThemeToggle";
+import AppNav from "../components/AppNav";
 
 const features = [
   {
@@ -47,21 +46,7 @@ const demoPrompts = [
 export default function LandingPage() {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[#F8FAFC] dark:bg-[#0B1120] transition-colors duration-200">
-      <header className="border-b border-[#E2E8F0] dark:border-[#1E293B] bg-white/70 dark:bg-[#0F172A]/70 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Logo size={36} showText />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <Link
-              href="/chat"
-              className="hidden sm:inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] dark:bg-[#3B82F6] dark:hover:bg-[#2563EB] text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors duration-200 shadow-sm"
-            >
-              Buka Chat
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AppNav />
 
       <main className="flex-1">
         {/* Hero */}
