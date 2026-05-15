@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, CheckCircle, ExternalLink, Copy, Check } from "lucide-react";
+import {
+  BellRing,
+  Check,
+  CheckCircle,
+  Copy,
+  Download,
+  ExternalLink,
+} from "lucide-react";
 
 interface InvoiceCardProps {
   namaKlien: string;
@@ -15,7 +22,7 @@ function formatRupiah(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 
@@ -29,6 +36,13 @@ export default function InvoiceCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID">(
+    "PENDING",
+  );
+  const [showToast, setShowToast] = useState(false);
+
+  const isPaid = paymentStatus === "PAID";
+  const formattedNominal = formatRupiah(nominalRupiah);
 
   const handleDownload = async () => {
     if (!cardRef.current || isDownloading) return;
@@ -57,9 +71,8 @@ export default function InvoiceCard({
     try {
       await navigator.clipboard.writeText(paymentUrl);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      window.setTimeout(() => setIsCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = paymentUrl;
       document.body.appendChild(textarea);
@@ -67,91 +80,143 @@ export default function InvoiceCard({
       document.execCommand("copy");
       document.body.removeChild(textarea);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      window.setTimeout(() => setIsCopied(false), 2000);
     }
+  };
+
+  const handleSimulateWebhook = () => {
+    if (isPaid) return;
+
+    setPaymentStatus("PAID");
+    setShowToast(true);
+    window.setTimeout(() => setShowToast(false), 4500);
   };
 
   return (
     <div className="mt-3 w-full max-w-sm">
-      {/* Kartu Invoice — ini yang akan di-screenshot oleh html2canvas */}
+      {showToast && (
+        <div className="fixed right-4 top-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-emerald-200 bg-white p-4 text-[#0F172A] shadow-2xl transition-all duration-300 dark:border-emerald-900 dark:bg-[#0F172A] dark:text-[#F8FAFC]">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              <CheckCircle size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300">
+                WhatsApp Automation
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-snug">
+                PayGent: Pembayaran {formattedNominal} dari {namaKlien} telah
+                diterima.
+              </p>
+              <p className="mt-1 text-xs text-[#64748B] dark:text-[#94A3B8]">
+                Auto-confirmed by Doku webhook
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         ref={cardRef}
-        className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
+        className={
+          "overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-500 " +
+          (isPaid
+            ? "border-emerald-300 ring-4 ring-emerald-100"
+            : "border-[#E2E8F0]")
+        }
       >
-        {/* Header kartu */}
-        <div className="bg-[#2563EB] px-5 py-4">
-          <div className="flex items-center justify-between">
+        <div
+          className={
+            "px-5 py-4 transition-colors duration-500 " +
+            (isPaid ? "bg-emerald-600" : "bg-[#2563EB]")
+          }
+        >
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[#BFDBFE] text-xs font-medium uppercase tracking-wider">
+              <p className="text-xs font-medium uppercase tracking-wider text-white/75">
                 Invoice
               </p>
-              <p className="text-white font-bold text-lg mt-0.5">
+              <p className="mt-0.5 text-lg font-bold text-white">
                 {invoiceNumber}
               </p>
             </div>
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <CheckCircle className="text-white" size={20} />
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                <CheckCircle className="text-white" size={20} />
+              </div>
+              <span
+                className={
+                  "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors duration-500 " +
+                  (isPaid
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-amber-100 text-amber-700")
+                }
+              >
+                {isPaid ? "PAID (Lunas)" : "PENDING"}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Body kartu */}
-        <div className="px-5 py-4 space-y-3">
+        <div className="space-y-3 px-5 py-4">
           <div>
-            <p className="text-[#94A3B8] text-xs font-medium uppercase tracking-wider">
+            <p className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
               Tagihan Kepada
             </p>
-            <p className="text-[#0F172A] font-semibold text-base mt-0.5">
+            <p className="mt-0.5 text-base font-semibold text-[#0F172A]">
               {namaKlien}
             </p>
           </div>
           <div>
-            <p className="text-[#94A3B8] text-xs font-medium uppercase tracking-wider">
+            <p className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
               Deskripsi
             </p>
-            <p className="text-[#334155] text-sm mt-0.5">{itemDeskripsi}</p>
+            <p className="mt-0.5 text-sm text-[#334155]">{itemDeskripsi}</p>
           </div>
-          <div className="pt-1 border-t border-[#F1F5F9]">
-            <p className="text-[#94A3B8] text-xs font-medium uppercase tracking-wider">
+          <div className="border-t border-[#F1F5F9] pt-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-[#94A3B8]">
               Total Tagihan
             </p>
-            <p className="text-[#0F172A] font-bold text-2xl mt-0.5">
-              {formatRupiah(nominalRupiah)}
+            <p className="mt-0.5 text-2xl font-bold text-[#0F172A]">
+              {formattedNominal}
             </p>
           </div>
-          <div className="bg-[#F8FAFC] rounded-xl p-3">
-            <p className="text-[#94A3B8] text-[10px] font-medium uppercase tracking-wider mb-1">
+          <div className="rounded-xl bg-[#F8FAFC] p-3">
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-[#94A3B8]">
               Link Pembayaran
             </p>
-            <p className="text-[#2563EB] text-xs font-medium break-all line-clamp-2">
+            <p className="line-clamp-2 break-all text-xs font-medium text-[#2563EB]">
               {paymentUrl}
             </p>
           </div>
           <div className="pt-1">
-            <p className="text-[#94A3B8] text-[10px] text-center">
-              ⏰ Berlaku 60 menit · Powered by Doku
+            <p className="text-center text-[10px] text-[#94A3B8]">
+              Berlaku 60 menit - Powered by Doku
             </p>
           </div>
         </div>
       </div>
 
-      {/* Action Buttons — di luar ref agar tidak ikut di-screenshot */}
-      <div className="flex gap-2 mt-3">
-        {/* Tombol Bayar */}
+      <div className="mt-3 flex gap-2">
         <a
           href={paymentUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] dark:bg-[#3B82F6] text-white text-sm font-medium py-2.5 rounded-xl transition-colors duration-200 shadow-sm"
+          className={
+            "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium text-white shadow-sm transition-colors duration-200 " +
+            (isPaid
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-[#2563EB] hover:bg-[#1D4ED8] dark:bg-[#3B82F6]")
+          }
         >
           <ExternalLink size={14} />
           Bayar Sekarang
         </a>
 
-        {/* Tombol Copy Link */}
         <button
+          type="button"
           onClick={handleCopyLink}
-          className="w-10 h-10 flex items-center justify-center bg-[#F1F5F9] hover:bg-[#E2E8F0] dark:bg-[#1E293B] dark:hover:bg-[#334155] text-[#64748B] dark:text-[#94A3B8] rounded-xl transition-colors duration-200"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F1F5F9] text-[#64748B] transition-colors duration-200 hover:bg-[#E2E8F0] dark:bg-[#1E293B] dark:text-[#94A3B8] dark:hover:bg-[#334155]"
           title="Copy link"
         >
           {isCopied ? (
@@ -161,16 +226,16 @@ export default function InvoiceCard({
           )}
         </button>
 
-        {/* Tombol Download */}
         <button
+          type="button"
           onClick={handleDownload}
           disabled={isDownloading}
-          className="w-10 h-10 flex items-center justify-center bg-[#F1F5F9] hover:bg-[#E2E8F0] dark:bg-[#1E293B] dark:hover:bg-[#334155] text-[#64748B] dark:text-[#94A3B8] disabled:opacity-50 rounded-xl transition-colors duration-200"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F1F5F9] text-[#64748B] transition-colors duration-200 hover:bg-[#E2E8F0] disabled:opacity-50 dark:bg-[#1E293B] dark:text-[#94A3B8] dark:hover:bg-[#334155]"
           title="Download invoice"
         >
           {isDownloading ? (
             <svg
-              className="animate-spin w-4 h-4"
+              className="h-4 w-4 animate-spin"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -194,6 +259,17 @@ export default function InvoiceCard({
           )}
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={handleSimulateWebhook}
+        disabled={isPaid}
+        title="Mock Doku webhook success event"
+        className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-[#64748B] transition-colors duration-200 hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:border-emerald-200 disabled:bg-emerald-50 disabled:text-emerald-700 dark:border-[#334155] dark:bg-[#111827] dark:text-[#94A3B8] dark:hover:bg-[#1E293B] dark:disabled:border-emerald-900 dark:disabled:bg-emerald-950 dark:disabled:text-emerald-300"
+      >
+        <BellRing size={14} />
+        {isPaid ? "Webhook Received" : "[Dev] Simulate Webhook"}
+      </button>
     </div>
   );
 }
