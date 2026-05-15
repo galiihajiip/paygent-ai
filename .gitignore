@@ -13,3 +13,10 @@ dist/
 # Allow plugin build outputs (loaded by OpenClaw Gateway)
 !plugins/*/dist/
 !plugins/*/dist/**
+
+# Editor / IDE
+.vscode/
+
+# Dev logs
+paygent-frontend/dev.log
+paygent-frontend/dev.err.log
