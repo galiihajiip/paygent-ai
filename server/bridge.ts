@@ -41,7 +41,7 @@ const GROQ_MODEL =
 
 if (!GROQ_API_KEY) {
   console.error(
-    "[bridge] FATAL: GROQ_API_KEY missing. Set it in paygent-openclaw/.env",
+    "[bridge] FATAL: GROQ_API_KEY missing. Set it in paygent-autobiller/.env",
   );
   process.exit(1);
 }
@@ -210,7 +210,7 @@ app.use(express.json({ limit: "256kb" }));
 
 app.get("/", (_req, res) => {
   res.json({
-    service: "paygent-openclaw-bridge",
+    service: "paygent-autobiller-bridge",
     version: "1.0.0",
     endpoint: "POST /api/message",
   });

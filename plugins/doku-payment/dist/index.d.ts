@@ -1806,7 +1806,7 @@ declare function buildDokuSignature(args: {
 declare function executeDokuCreatePaymentLink(params: DokuPaymentParams): Promise<DokuToolResult>;
 /**
  * OpenClaw plugin entry. Used by the OpenClaw Gateway when running with the full
- * harness. The bridge server in paygent-openclaw/server/bridge.ts invokes
+ * harness. The bridge server in paygent-autobiller/server/bridge.ts invokes
  * `executeDokuCreatePaymentLink` directly with the same schema and parameters.
  */
 declare const _default: {

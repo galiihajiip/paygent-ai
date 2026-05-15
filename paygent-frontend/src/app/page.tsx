@@ -90,7 +90,7 @@ export default function LandingPage() {
               <ArrowRight size={16} />
             </Link>
             <a
-              href="https://github.com/galiihajiip/paygent-ai"
+              href="https://github.com/galiihajiip/paygent-autobiller"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white dark:bg-[#1E293B] hover:bg-[#F1F5F9] dark:hover:bg-[#334155] text-[#0F172A] dark:text-[#F1F5F9] border border-[#E2E8F0] dark:border-[#334155] text-sm font-medium px-6 py-3 rounded-xl transition-colors duration-200"

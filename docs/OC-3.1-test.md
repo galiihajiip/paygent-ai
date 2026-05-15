@@ -5,9 +5,9 @@
 
 ## Setup
 
-- **Bridge:** `paygent-openclaw/server/bridge.ts` (Express + tsx, listens on :3001)
-- **Skill:** `paygent-openclaw/skills/doku-billing/SKILL.md` (loaded at boot, body used as system prompt)
-- **Tool:** `paygent-openclaw/plugins/doku-payment/index.ts` (`executeDokuCreatePaymentLink` invoked directly via OpenAI-compatible function calling)
+- **Bridge:** `paygent-autobiller/server/bridge.ts` (Express + tsx, listens on :3001)
+- **Skill:** `paygent-autobiller/skills/doku-billing/SKILL.md` (loaded at boot, body used as system prompt)
+- **Tool:** `paygent-autobiller/plugins/doku-payment/index.ts` (`executeDokuCreatePaymentLink` invoked directly via OpenAI-compatible function calling)
 - **Model:** `groq/llama-3.3-70b-versatile`
 - **Doku endpoint:** `https://api-sandbox.doku.com/checkout/v1/payment`
 

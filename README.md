@@ -49,8 +49,8 @@ OpenClaw Gateway (port 3001)
 ### 1. Clone repo
 
 ```bash
-git clone https://github.com/galiihajiip/paygent-ai.git
-cd paygent-ai
+git clone https://github.com/galiihajiip/paygent-autobiller.git
+cd paygent-autobiller
 ```
 
 ### 2. Install OpenClaw CLI
@@ -161,7 +161,7 @@ Tiga skenario yang bisa diuji langsung di chat:
 ## Repository Layout
 
 ```
-paygent-openclaw/
+paygent-autobiller/
 ├── config/
 │   └── openclaw.json              # OpenClaw Gateway configuration
 ├── plugins/
