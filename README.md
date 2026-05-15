@@ -163,6 +163,6 @@ Open http://localhost:3000 and type:
 
 MIT License · Built with ❤️ for OpenClaw Agenthon Indonesia 2026
 
-**Team:** PayGent
+**Developed by:** Galih Aji Pangestu
 
 **Special Thanks:** Doku · OpenClaw · Groq · Build Club Indonesia
