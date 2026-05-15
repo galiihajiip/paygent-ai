@@ -23,7 +23,9 @@ const welcomeMessage: Message = {
 };
 
 const openclawUrl =
-  process.env.NEXT_PUBLIC_OPENCLAW_URL ?? "http://localhost:3001";
+  typeof window !== 'undefined' && process.env.NEXT_PUBLIC_OPENCLAW_URL
+    ? process.env.NEXT_PUBLIC_OPENCLAW_URL
+    : ""; // Jika tidak diatur, gunakan root domain (untuk /api/message lokal)
 
 export default function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
@@ -89,7 +91,7 @@ export default function ChatWindow() {
         setMessages((prev) => [...prev, assistantMessage]);
       } catch {
         setError(
-          "Gagal terhubung ke server. Pastikan PayGent bridge berjalan di port 3001."
+          "Gagal terhubung ke server."
         );
         const errorMessage: Message = {
           id: `error-${Date.now()}`,

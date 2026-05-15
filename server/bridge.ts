@@ -35,7 +35,7 @@ loadDotenv({ path: join(__dirname, "..", ".env"), override: false });
 
 // -- Config --------------------------------------------------------------------
 
-const PORT = Number(process.env.OPENCLAW_BRIDGE_PORT ?? 3001);
+const PORT = Number(process.env.PORT ?? process.env.OPENCLAW_BRIDGE_PORT ?? 3001);
 const GROQ_API_KEY = process.env.GROQ_API_KEY ?? "";
 const GROQ_MODEL =
   process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
@@ -483,9 +483,12 @@ async function runAgent(
 // -- HTTP server ---------------------------------------------------------------
 
 const app = express();
+
+// Set CORS to allow Vercel domains
+const allowedOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL, "http://localhost:3000", "http://127.0.0.1:3000"] : "*";
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
