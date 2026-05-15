@@ -37,7 +37,11 @@ function tryParseInvoiceData(content: string): InvoiceData | null {
     // Bukan JSON, lanjut ke pattern matching
   }
 
-  // Pattern matching untuk pesan natural language yang mengandung URL Doku
+  // Pattern matching hanya untuk respons pembuatan tagihan baru.
+  // Jangan ubah jawaban konteks yang kebetulan menyebut URL Doku menjadi InvoiceCard.
+  const isCreateInvoiceReply = /tagihan berhasil dibuat/i.test(content);
+  if (!isCreateInvoiceReply) return null;
+
   const urlMatch = content.match(/https?:\/\/[^\s]+doku[^\s]+/i);
   const invoiceMatch = content.match(/INV-[A-Z0-9]+/i);
   const nominalMatch = content.match(/Rp\s*([\d.,]+)/i);

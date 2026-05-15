@@ -94,6 +94,74 @@ const dokuTool = {
   },
 };
 
+function normalizeIntentText(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function isContextQuestion(userMessage: string): boolean {
+  const text = normalizeIntentText(userMessage);
+
+  const contextPatterns = [
+    /\b(sudah|udah|telah)\s+(di)?bayar\b/,
+    /\b(belum|blm)\s+(di)?bayar\b/,
+    /\bpaid\b|\bunpaid\b|\bstatus\b/,
+    /\bcek\b.*\b(pembayaran|bayar|status)\b/,
+    /\btahu\b.*\b(dibayar|bayar|status)\b/,
+    /\bbisa\b.*\b(tahu|cek|lihat|monitor)\b/,
+    /\bberlaku\b.*\b(kapan|berapa|sampai)\b/,
+    /\bexpired\b|\bkedaluwarsa\b/,
+    /\b(gimana|bagaimana|apa)\b.*\b(paygent|ini|link|invoice|tagihan)\b/,
+  ];
+
+  return contextPatterns.some((pattern) => pattern.test(text));
+}
+
+function hasCreateBillingIntent(text: string): boolean {
+  return [
+    "tagih",
+    "tagihkan",
+    "buat tagihan",
+    "buat invoice",
+    "bikin tagihan",
+    "bikin invoice",
+    "generate payment link",
+    "buat payment link",
+    "buat link pembayaran",
+    "kirim bill",
+    "request pembayaran",
+  ].some((phrase) => text.includes(phrase));
+}
+
+function isLikelyClarificationAnswer(
+  userMessage: string,
+  history: { role: "user" | "assistant"; content: string }[],
+): boolean {
+  const text = normalizeIntentText(userMessage);
+  const recent = history.slice(-4).map((entry) => normalizeIntentText(entry.content));
+  const recentText = recent.join(" ");
+
+  const agentAskedForMissingBillingData =
+    recentText.includes("boleh saya tahu") &&
+    (recentText.includes("nominal") ||
+      recentText.includes("klien") ||
+      recentText.includes("untuk apa") ||
+      recentText.includes("deskripsi"));
+
+  if (!agentAskedForMissingBillingData) return false;
+
+  return text.length > 0 && !isContextQuestion(text);
+}
+
+function shouldEnableDokuCreateTool(
+  userMessage: string,
+  history: { role: "user" | "assistant"; content: string }[],
+): boolean {
+  if (isContextQuestion(userMessage)) return false;
+
+  const text = normalizeIntentText(userMessage);
+  return hasCreateBillingIntent(text) || isLikelyClarificationAnswer(userMessage, history);
+}
+
 // -- Groq client ---------------------------------------------------------------
 
 const groq = new OpenAI({
@@ -118,6 +186,7 @@ async function runAgent(
   userMessage: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
 ): Promise<string> {
+  const enableDokuCreateTool = shouldEnableDokuCreateTool(userMessage, history);
   const messages: ChatMessage[] = [
     { role: "system", content: SKILL_PROMPT },
     ...history.map((h) => ({ role: h.role, content: h.content })),
@@ -129,8 +198,8 @@ async function runAgent(
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
       messages: messages as never,
-      tools: [dokuTool],
-      tool_choice: "auto",
+      tools: enableDokuCreateTool ? [dokuTool] : undefined,
+      tool_choice: enableDokuCreateTool ? "auto" : undefined,
       temperature: 0,
     });
 
