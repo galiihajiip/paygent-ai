@@ -17,7 +17,26 @@ interface InvoiceData {
 }
 
 function tryParseInvoiceData(content: string): InvoiceData | null {
-  // Coba parse JSON langsung (untuk OpenClaw yang return JSON)
+  // 1. Deteksi hidden JSON config jika bot mengirim tag <!-- INVOICE_DATA:{...} -->
+  const injectedMatch = content.match(/<!--\s*INVOICE_DATA:(.*?)\s*-->/);
+  if (injectedMatch) {
+    try {
+      const parsed = JSON.parse(injectedMatch[1]);
+      if (parsed.success) {
+        return {
+          namaKlien: parsed.nama_klien || "Klien",
+          itemDeskripsi: parsed.item_deskripsi || "Lihat detail di payment link",
+          nominalRupiah: Number(parsed.nominal_rupiah) || 0,
+          invoiceNumber: parsed.invoice_number,
+          paymentUrl: parsed.payment_url,
+        };
+      }
+    } catch {
+      // lanjut fallback
+    }
+  }
+
+  // 2. Coba parse JSON langsung (untuk fallback lain)
   try {
     const parsed = JSON.parse(content) as Record<string, unknown>;
     if (
@@ -28,7 +47,7 @@ function tryParseInvoiceData(content: string): InvoiceData | null {
       return {
         namaKlien: parsed.nama_klien as string,
         itemDeskripsi: parsed.item_deskripsi as string,
-        nominalRupiah: parsed.nominal_rupiah as number,
+        nominalRupiah: Number(parsed.nominal_rupiah) || 0,
         invoiceNumber: parsed.invoice_number as string,
         paymentUrl: parsed.payment_url as string,
       };
@@ -103,7 +122,8 @@ export default function MessageBubble({ role, content }: MessageBubbleProps) {
   const cleanContent = content
     .replace(/\*\*/g, "")
     .replace(/(^|\s)\*(?=\S)/g, "$1")
-    .replace(/(?<=\S)\*(\s|$)/g, "$1");
+    .replace(/(?<=\S)\*(\s|$)/g, "$1")
+    .replace(/<!--\s*INVOICE_DATA:.*?\s*-->/g, ""); // Hide metadata tag
 
   if (role === "user") {
     return (

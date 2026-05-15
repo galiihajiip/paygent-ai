@@ -205,8 +205,7 @@ export async function POST(req: NextRequest) {
       { role: "user", content: userMessage },
     ];
 
-    let reply = "Pesan gagal direspon.";
-    for (let turn = 0; turn < 4; turn++) {
+    let reply = "Pesan gagal direspon.";      let invoiceDataFromTool: any = null;    for (let turn = 0; turn < 4; turn++) {
       const completion = await groq.chat.completions.create({
         model: GROQ_MODEL,
         messages: messages as any,
@@ -234,12 +233,21 @@ export async function POST(req: NextRequest) {
             const result = await executeDokuCreatePaymentLink(params);
             toolOutputText = result.content[0]?.text ?? "";
             saveCreatedInvoiceFromToolOutput(toolOutputText);
+            
+            try {
+              invoiceDataFromTool = JSON.parse(toolOutputText);
+            } catch (e) {}
+
           } catch {
             toolOutputText = "ERROR: Argumen invalid JSON.";
           }
         }
         messages.push({ role: "tool", tool_call_id: tc.id, content: toolOutputText } as any);
       }
+    }
+
+    if (invoiceDataFromTool && invoiceDataFromTool.success) {
+      reply += `\n\n<!-- INVOICE_DATA:${JSON.stringify(invoiceDataFromTool)} -->`;
     }
 
     return NextResponse.json({ message: reply });
