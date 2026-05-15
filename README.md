@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 PayGent — Auto-Biller AI
+# PayGent - Auto-Biller AI
 
 **Tagih klien dalam satu kalimat. Terima payment link dalam detik.**
 
@@ -10,10 +10,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Dibangun dalam 12 jam untuk **OpenClaw Agenthon Indonesia 2026**
-> 🏆 Submission untuk kategori **Best Payment Use Case** · Powered by Doku
+> Built in 12 hours for **OpenClaw Agenthon Indonesia 2026**
+> Submission for **Best Payment Use Case** - Powered by Doku
 
-[▶ Lihat Demo](#demo) · [🚀 Deploy Sendiri](#installation) · [📐 Arsitektur](#architecture)
+[View Demo](#demo) | [Run Locally](#installation) | [Architecture](#architecture)
 
 </div>
 
@@ -25,71 +25,90 @@ The bigger issue is "pekewuh culture": the social hesitation to chase overdue cl
 
 ## Demo
 
-### Cukup ketik satu kalimat:
+### Just type one sentence:
 
-> *"Tagihkan PT Kreasi Digital 2.5 juta untuk jasa pembuatan website"*
+> "Tagihkan PT Kreasi Digital 2.5 juta untuk jasa pembuatan website"
 
-**PayGent langsung:**
-1. 🧠 Memahami intent & mengekstrak entitas (klien, item, nominal)
-2. 🔧 Memanggil Doku Payment API secara real-time
-3. 💳 Mengembalikan payment link yang siap dikirim ke klien
-4. 📄 Menampilkan Invoice Card yang bisa diunduh sebagai PNG
+**PayGent instantly:**
+1. Understands intent and extracts entities: client, item, amount
+2. Calls the Doku Payment API in real time
+3. Returns a payment link that is ready to send
+4. Renders an Invoice Card that can be downloaded as PNG
 
 ![Demo GIF](docs/demo.gif)
-> *Rekam demo dan letakkan di `docs/demo.gif` sebelum submission*
+> Record the demo and place it at `docs/demo.gif` before final submission.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    USER INTERFACE                        │
-│         Next.js 16 · Tailwind CSS · Dark Mode · PWA     │
-└────────────────────────┬────────────────────────────────┘
-                         │ Natural Language Input
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                  OPENCLAW GATEWAY                        │
-│              Self-hosted AI Agent Core                   │
-│                                                          │
-│  ┌─────────────────┐    ┌──────────────────────────┐    │
-│  │  SKILL.md       │    │  Plugin: doku-payment     │    │
-│  │  doku-billing   │───▶│  TypeScript · Fetch API   │    │
-│  │  (Workflow)     │    │  (Tool Execution)         │    │
-│  └─────────────────┘    └──────────────┬───────────┘    │
-│                                        │                 │
-│         Model: Groq LLaMA-3 70B        │                 │
-│         (ReAct Reasoning Loop)         │                 │
-└────────────────────────────────────────┼────────────────┘
-                                         │ HTTPS POST
-                                         ▼
-┌─────────────────────────────────────────────────────────┐
-│              DOKU SANDBOX API                            │
-│         /checkout/v1/payment                             │
-│         Returns: Payment Link URL                        │
-└─────────────────────────────────────────────────────────┘
+```text
++---------------------------------------------------------+
+|                    USER INTERFACE                       |
+|        Next.js 16 - Tailwind CSS - Dark Mode - PWA      |
++------------------------+--------------------------------+
+                         |
+                         | Natural language input
+                         v
++---------------------------------------------------------+
+|                 PAYGENT AGENT RUNTIME                   |
+|                                                         |
+|  +-------------------+      +------------------------+  |
+|  | SKILL.md          |      | Doku Payment Plugin    |  |
+|  | doku-billing      +----->| TypeScript Fetch API   |  |
+|  | workflow rules    |      | HMAC signed request    |  |
+|  +-------------------+      +------------+-----------+  |
+|                                           |              |
+|      Groq LLaMA-3 70B reasoning loop      |              |
+|      OpenClaw-style tool orchestration    |              |
++-------------------------------------------+-------------+
+                                            |
+                                            | HTTPS POST
+                                            v
++---------------------------------------------------------+
+|                    DOKU SANDBOX API                     |
+|                 /checkout/v1/payment                    |
+|                 returns payment link URL                 |
++---------------------------------------------------------+
 ```
 
 **Layer breakdown:**
 
 | Layer | Technology | Function |
 |-------|------------|----------|
-| UI | Next.js + Tailwind | Chat interface, Invoice Card, PWA |
-| Agent Core | OpenClaw Gateway | Orchestration, ReAct reasoning |
-| Workflow | SKILL.md | Declarative billing workflow |
-| Tool | TypeScript Plugin | Doku API caller |
+| UI | Next.js + Tailwind | Chat interface, Invoice Card, PWA install prompt |
+| Agent Workflow | SKILL.md | Declarative billing rules and edge-case handling |
+| Runtime Bridge | Express + OpenAI-compatible API | Lightweight runner for the OpenClaw-style agent flow |
+| Legacy Reasoning Path | Python FastAPI + LangChain | Original reasoning engine and reference implementation |
+| Tool | TypeScript Plugin | Doku API caller with HMAC signature |
 | LLM | Groq LLaMA-3 70B | Natural language understanding |
 | Payment | Doku Sandbox | Payment link generation |
+
+## How We Built This (Hybrid Architecture)
+
+PayGent uses a hybrid architecture designed for both hackathon reliability and agent extensibility.
+
+The frontend is built with **Next.js 16**, Tailwind CSS, dark mode, PWA metadata, and an install prompt. This layer focuses on the user experience: a polished chat interface, natural-language billing flow, downloadable invoice cards, copyable payment links, and mobile-friendly interactions.
+
+The reasoning layer started as a **Python FastAPI + LangChain** agent, where the AI reads the user's Indonesian billing request, extracts the required entities, and decides whether it has enough information to create an invoice. This Python path remains in the repository as the original reasoning engine and reference implementation.
+
+For the final Agenthon demo, the same behavior is wrapped in an **OpenClaw-style agent ecosystem**:
+
+- `skills/doku-billing/SKILL.md` acts as the declarative workflow: when to create invoices, when to ask for clarification, how to avoid hallucinating missing billing data, and how to answer payment-status questions.
+- `plugins/doku-payment/` is the TypeScript tool/plugin that calls the real Doku Checkout API.
+- `server/bridge.ts` is a lightweight self-hosted runner that loads the SKILL.md workflow, exposes an OpenAI-compatible tool-calling loop, and executes the Doku payment plugin.
+
+This gives PayGent the best of both worlds: a premium Next.js product experience, a Python/LangChain reasoning foundation, and an OpenClaw-compatible skill/tool structure that makes the agent behavior inspectable, extensible, and judge-friendly.
 
 ## Tech Stack
 
 | Category | Technology | Why We Chose It |
 |----------|------------|-----------------|
-| Frontend | Next.js 16 App Router | Server Components + streaming-ready architecture for an instant chat feel |
-| Styling | Tailwind CSS + Dark Mode | Zero runtime CSS, dark mode via class strategy |
-| Agent | OpenClaw Gateway | Self-hosted, extensible via SKILL.md and TypeScript plugins |
-| LLM | Groq LLaMA-3 70B | Sub-1s inference, free tier enough for hackathon load |
-| Payment | Doku Sandbox API | Indonesian payment gateway, supports VA, QRIS, e-wallet |
-| PWA | Next.js native manifest | Installable on mobile/desktop without extra libraries |
+| Frontend | Next.js 16 App Router | Fast, production-ready UI with PWA support |
+| Styling | Tailwind CSS + Dark Mode | Rapid iteration and consistent design system |
+| Agent Workflow | OpenClaw-style SKILL.md | Declarative agent behavior that judges can inspect |
+| Reasoning | Python FastAPI + LangChain, Groq LLaMA-3 70B | Natural-language extraction and tool-use reasoning |
+| Bridge Runtime | Express + TypeScript | Lightweight demo runner for SKILL.md + Doku plugin |
+| Payment | Doku Sandbox API | Real Indonesian payment gateway integration |
+| PWA | Next.js manifest + service worker | Installable on mobile/desktop without extra libraries |
 
 ## Installation
 
@@ -98,7 +117,7 @@ The bigger issue is "pekewuh culture": the social hesitation to chase overdue cl
 - Node.js 20+
 - npm 10+
 - OpenClaw CLI (`npm install -g openclaw`)
-- Groq account (free): https://console.groq.com
+- Groq account: https://console.groq.com
 - Doku Sandbox account: https://jokul.doku.com
 
 ### Quick Start
@@ -110,29 +129,35 @@ git clone https://github.com/galiihajiip/paygent-autobiller.git
 cd paygent-autobiller
 ```
 
-**2. Setup Backend (OpenClaw artifacts + bridge runner)**
+**2. Configure credentials**
 
 ```bash
-# Copy and fill environment variables
 cp .env.example .env
-# Edit .env: fill GROQ_API_KEY, DOKU_CLIENT_ID, DOKU_SECRET_KEY
+# Edit .env and fill:
+# GROQ_API_KEY
+# DOKU_CLIENT_ID
+# DOKU_SECRET_KEY
+```
 
-# Build the Doku payment plugin
+**3. Build the Doku payment plugin**
+
+```bash
 cd plugins/doku-payment
 npm install
 npm run build
 cd ../..
+```
 
-# Install and run the OpenClaw bridge
+**4. Run the PayGent bridge**
+
+```bash
 cd server
 npm install
 npm start
 # Bridge runs at http://localhost:3001
 ```
 
-> The bridge loads the same OpenClaw artifacts used by the gateway path: `skills/doku-billing/SKILL.md` for the workflow and `plugins/doku-payment` for the executable Doku tool. It keeps the demo lightweight and reliable for hackathon environments.
-
-**3. Setup Frontend (Next.js)**
+**5. Run the Next.js frontend**
 
 ```bash
 cd paygent-frontend
@@ -142,7 +167,7 @@ npm run dev
 # App runs at http://localhost:3000
 ```
 
-**4. Test**
+**6. Test**
 
 Open http://localhost:3000 and type:
 
@@ -159,9 +184,41 @@ Open http://localhost:3000 and type:
 | `NEXT_PUBLIC_API_URL` | Default `http://localhost:8000` | Optional |
 | `NEXT_PUBLIC_OPENCLAW_URL` | Default `http://localhost:3001` | Optional |
 
+## Future Roadmap
+
+### 1. Doku Webhook Listener
+
+The next milestone is a production-grade **Doku Webhook Listener**. Instead of only generating payment links, PayGent will listen for Doku payment notifications and update invoice status automatically.
+
+Future flow:
+
+```text
+Customer pays invoice
+        |
+        v
+Doku sends webhook notification
+        |
+        v
+PayGent marks invoice as PAID
+        |
+        v
+PayGent sends an automatic message:
+"Invoice INV-XXXX has been paid. Payment received from PT Kreasi Digital."
+```
+
+This turns PayGent from a payment-link generator into a full billing assistant: it can create invoices, monitor payment status, and notify the freelancer the moment money arrives.
+
+### 2. WhatsApp Payment Follow-up
+
+PayGent will be able to send payment links and paid/unpaid reminders directly to WhatsApp, matching how Indonesian freelancers already communicate with clients.
+
+### 3. Client & Revenue Dashboard
+
+Future versions will store client profiles, invoice history, payment status, monthly revenue, and late-payment analytics.
+
 ## License
 
-MIT License · Built with ❤️ for OpenClaw Agenthon Indonesia 2026
+MIT License - Built for OpenClaw Agenthon Indonesia 2026
 
 **Developed by:** Galih Aji Pangestu
 
