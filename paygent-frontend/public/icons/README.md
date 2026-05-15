@@ -1,8 +1,9 @@
-# PWA Icons
+# PayGent Icons
 
-Place the following files here for PWA to work correctly:
-- `icon-192.png` — 192x192 pixels, maskable icon
-- `icon-512.png` — 512x512 pixels, any purpose icon
+These assets are generated from the PayGent brand mark:
 
-Generate from: https://realfavicongenerator.net
-Use brand color #2563EB as background.
+- `paygent.svg` - source SVG for browser metadata and scalable usage
+- `icon-192.png` - PWA icon for Android and install surfaces
+- `icon-512.png` - large PWA icon for splash/install surfaces
+
+Brand color: `#2563EB`

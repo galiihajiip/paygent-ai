@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "PayGent – Auto-Biller AI",
+    name: "PayGent - Auto-Biller AI",
     short_name: "PayGent",
     description:
       "Asisten penagihan berbasis AI. Ketik perintah, dapat payment link.",
@@ -15,6 +15,12 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait-primary",
     categories: ["finance", "productivity", "utilities"],
     icons: [
+      {
+        src: "/icons/paygent.svg",
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any",
+      },
       {
         src: "/icons/icon-192.png",
         sizes: "192x192",
