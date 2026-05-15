@@ -1,0 +1,24 @@
+{
+  "name": "@paygent/openclaw-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch bridge.ts",
+    "start": "tsx bridge.ts"
+  },
+  "dependencies": {
+    "@paygent/openclaw-doku-payment": "file:../plugins/doku-payment",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.0.0",
+    "openai": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
