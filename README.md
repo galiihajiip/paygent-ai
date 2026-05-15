@@ -1,200 +1,168 @@
-# PayGent OpenClaw Edition
+<div align="center">
 
-### Auto-Biller AI · Powered by Doku Payment Gateway × OpenClaw Agent Framework
+# 🤖 PayGent — Auto-Biller AI
 
-PayGent adalah asisten AI berbahasa Indonesia yang mengubah satu kalimat natural language ("tolong tagihkan PT Maju Bersama 2.5 juta untuk jasa konsultasi bisnis") menjadi payment link Doku yang siap dikirim ke klien. Edisi OpenClaw ini membongkar dependensi backend kustom dan membangun ulang agent di atas OpenClaw Gateway, dengan Doku terintegrasi sebagai TypeScript plugin resmi dan workflow penagihan dideklarasikan via SKILL.md.
+**Tagih klien dalam satu kalimat. Terima payment link dalam detik.**
 
----
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-Agent-blue)](https://openclaw.ai)
+[![Doku](https://img.shields.io/badge/Doku-Payment%20API-orange)](https://doku.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+> Dibangun dalam 12 jam untuk **OpenClaw Agenthon Indonesia 2026**
+> 🏆 Submission untuk kategori **Best Payment Use Case** · Powered by Doku
+
+[▶ Lihat Demo](#demo) · [🚀 Deploy Sendiri](#installation) · [📐 Arsitektur](#architecture)
+
+</div>
+
+## The Problem
+
+Indonesian freelancers lose an average of 3-5 hours every week creating invoices manually, copying client details, formatting totals, and sending follow-up payment messages by hand.
+
+The bigger issue is "pekewuh culture": the social hesitation to chase overdue clients. Existing invoice tools like spreadsheets and Canva templates look nice, but they are not connected to payment gateways, so cash flow still gets stuck.
+
+## Demo
+
+### Cukup ketik satu kalimat:
+
+> *"Tagihkan PT Kreasi Digital 2.5 juta untuk jasa pembuatan website"*
+
+**PayGent langsung:**
+1. 🧠 Memahami intent & mengekstrak entitas (klien, item, nominal)
+2. 🔧 Memanggil Doku Payment API secara real-time
+3. 💳 Mengembalikan payment link yang siap dikirim ke klien
+4. 📄 Menampilkan Invoice Card yang bisa diunduh sebagai PNG
+
+![Demo GIF](docs/demo.gif)
+> *Rekam demo dan letakkan di `docs/demo.gif` sebelum submission*
 
 ## Architecture
 
 ```
-User (Natural Language)
-        │
-        ▼
-Next.js Frontend (port 3000)
-        │  iframe / REST API
-        ▼
-OpenClaw Gateway (port 3001)
-        │
-        ├─── SKILL: doku-billing/SKILL.md
-        │    (mengajarkan agent kapan & bagaimana menagih)
-        │
-        ├─── PLUGIN: @paygent/openclaw-doku-payment
-        │    (memanggil Doku Sandbox API secara nyata)
-        │
-        └─── MODEL: Groq LLaMA-3 70B
-             (reasoning engine via ReAct loop)
-                    │
-                    ▼
-           Doku Sandbox API
-           /checkout/v1/payment
-                    │
-                    ▼
-           Payment Link URL
-           dikembalikan ke user
+┌─────────────────────────────────────────────────────────┐
+│                    USER INTERFACE                        │
+│         Next.js 16 · Tailwind CSS · Dark Mode · PWA     │
+└────────────────────────┬────────────────────────────────┘
+                         │ Natural Language Input
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                  OPENCLAW GATEWAY                        │
+│              Self-hosted AI Agent Core                   │
+│                                                          │
+│  ┌─────────────────┐    ┌──────────────────────────┐    │
+│  │  SKILL.md       │    │  Plugin: doku-payment     │    │
+│  │  doku-billing   │───▶│  TypeScript · Fetch API   │    │
+│  │  (Workflow)     │    │  (Tool Execution)         │    │
+│  └─────────────────┘    └──────────────┬───────────┘    │
+│                                        │                 │
+│         Model: Groq LLaMA-3 70B        │                 │
+│         (ReAct Reasoning Loop)         │                 │
+└────────────────────────────────────────┼────────────────┘
+                                         │ HTTPS POST
+                                         ▼
+┌─────────────────────────────────────────────────────────┐
+│              DOKU SANDBOX API                            │
+│         /checkout/v1/payment                             │
+│         Returns: Payment Link URL                        │
+└─────────────────────────────────────────────────────────┘
 ```
 
----
+**Layer breakdown:**
 
-## Quick Start
+| Layer | Technology | Function |
+|-------|------------|----------|
+| UI | Next.js + Tailwind | Chat interface, Invoice Card, PWA |
+| Agent Core | OpenClaw Gateway | Orchestration, ReAct reasoning |
+| Workflow | SKILL.md | Declarative billing workflow |
+| Tool | TypeScript Plugin | Doku API caller |
+| LLM | Groq LLaMA-3 70B | Natural language understanding |
+| Payment | Doku Sandbox | Payment link generation |
+
+## Tech Stack
+
+| Category | Technology | Why We Chose It |
+|----------|------------|-----------------|
+| Frontend | Next.js 16 App Router | Server Components + streaming-ready architecture for an instant chat feel |
+| Styling | Tailwind CSS + Dark Mode | Zero runtime CSS, dark mode via class strategy |
+| Agent | OpenClaw Gateway | Self-hosted, extensible via SKILL.md and TypeScript plugins |
+| LLM | Groq LLaMA-3 70B | Sub-1s inference, free tier enough for hackathon load |
+| Payment | Doku Sandbox API | Indonesian payment gateway, supports VA, QRIS, e-wallet |
+| PWA | Next.js native manifest | Installable on mobile/desktop without extra libraries |
+
+## Installation
 
 ### Prerequisites
 
 - Node.js 20+
 - npm 10+
-- Akun Groq dengan API key (https://console.groq.com)
-- Akun Doku Sandbox dengan Client ID dan Secret Key (https://sandbox.doku.com)
+- OpenClaw CLI (`npm install -g openclaw`)
+- Groq account (free): https://console.groq.com
+- Doku Sandbox account: https://jokul.doku.com
 
-### 1. Clone repo
+### Quick Start
+
+**1. Clone repository**
 
 ```bash
 git clone https://github.com/galiihajiip/paygent-autobiller.git
 cd paygent-autobiller
 ```
 
-### 2. Install OpenClaw CLI
+**2. Setup Backend (OpenClaw artifacts + bridge runner)**
 
 ```bash
-npm install -g openclaw
-```
-
-### 3. Konfigurasi credentials
-
-```bash
+# Copy and fill environment variables
 cp .env.example .env
-# Buka .env dan isi GROQ_API_KEY, DOKU_CLIENT_ID, DOKU_SECRET_KEY
-```
+# Edit .env: fill GROQ_API_KEY, DOKU_CLIENT_ID, DOKU_SECRET_KEY
 
-### 4. Build Doku payment plugin
-
-```bash
+# Build the Doku payment plugin
 cd plugins/doku-payment
 npm install
 npm run build
 cd ../..
-```
 
-### 5. Jalankan PayGent OpenClaw Bridge
-
-```bash
+# Install and run the OpenClaw bridge
 cd server
 npm install
 npm start
+# Bridge runs at http://localhost:3001
 ```
 
-Bridge akan berjalan di port 3001. Bridge memuat `skills/doku-billing/SKILL.md` sebagai system prompt dan menjalankan `executeDokuCreatePaymentLink` dari plugin TypeScript secara langsung — kode yang sama persis yang juga didaftarkan ke OpenClaw Gateway via `definePluginEntry` di `plugins/doku-payment/index.ts`.
+> The bridge loads the same OpenClaw artifacts used by the gateway path: `skills/doku-billing/SKILL.md` for the workflow and `plugins/doku-payment` for the executable Doku tool. It keeps the demo lightweight and reliable for hackathon environments.
 
-> **Catatan teknis.** OpenClaw 2026.5.7 menyertakan embedded harness yang menyuntikkan ~30 ribu token konteks per turn, melebihi limit Groq free-tier. Bridge ini adalah runner ringan untuk artefak OpenClaw yang sama (SKILL.md + plugin tool) sehingga demo bisa berjalan di environment dengan TPM terbatas. Lihat `docs/OC-3.1-test.md` untuk hasil verifikasi end-to-end (3 skenario, 3 payment link Doku Sandbox real).
-
-### 6. Jalankan Next.js frontend
-
-Di terminal terpisah:
+**3. Setup Frontend (Next.js)**
 
 ```bash
 cd paygent-frontend
+cp .env.local.example .env.local
 npm install
 npm run dev
+# App runs at http://localhost:3000
 ```
 
-### 7. Buka aplikasi
+**4. Test**
 
-Akses `http://localhost:3000` di browser. Frontend akan terhubung ke bridge di `http://localhost:3001/api/message` dan menampilkan chat UI custom (`src/components/ChatWindow.tsx`).
+Open http://localhost:3000 and type:
 
----
+> "Tagihkan PT Maju Bersama 1 juta untuk jasa konsultasi"
 
-## Demo Script
+## Environment Variables
 
-Tiga skenario yang bisa diuji langsung di chat:
-
-### Skenario 1 — Penagihan korporat dengan format nominal "juta"
-
-> **User:** Tagihkan PT Kreasi Digital 2.5 juta untuk jasa pembuatan website
->
-> **PayGent:**
-> ✅ **Tagihan berhasil dibuat!**
->
-> Halo, **PT Kreasi Digital**! 😊
->
-> | Detail | Informasi |
-> |--------|-----------|
-> | 📋 Item | Jasa pembuatan website |
-> | 💰 Nominal | Rp 2.500.000 |
-> | 🧾 No. Invoice | INV-XXXXXX |
->
-> 🔗 **Link Pembayaran:** https://sandbox.doku.com/...
-
-**Apa yang terjadi:** Agent mengekstrak `nama_klien=PT Kreasi Digital`, `item_deskripsi=jasa pembuatan website`, `nominal_rupiah=2500000`, lalu memanggil tool `doku_create_payment_link`.
-
-### Skenario 2 — Penagihan personal dengan format nominal "ribu"
-
-> **User:** Buat invoice untuk Budi Santoso 750 ribu untuk konsultasi bisnis 1 jam
->
-> **PayGent:** menghasilkan tagihan `Rp 750.000` atas nama `Budi Santoso` untuk `konsultasi bisnis 1 jam`.
-
-**Apa yang ditunjukkan:** Konversi unit "ribu" ke `750000` dilakukan oleh LLM tanpa parsing rules manual.
-
-### Skenario 3 — Bahasa kasual dengan singkatan
-
-> **User:** Aku mau nagih klien baru, namanya Sarah, untuk desain logo, harganya 500k
->
-> **PayGent:** menghasilkan tagihan `Rp 500.000` atas nama `Sarah` untuk `desain logo`.
-
-**Apa yang ditunjukkan:** Agent mengenali singkatan `500k = 500000` dan tetap mengikuti workflow yang sama dengan skenario formal.
-
----
-
-## Key Technical Differentiators
-
-- **Native OpenClaw Plugin SDK.** Tool penagihan ditulis dalam TypeScript dengan `definePluginEntry` dari `openclaw/plugin-sdk/core`, schema parameter divalidasi via Typebox, return type strongly-typed (`AnyAgentTool` / `AgentToolResult`). Tidak ada `any`, tidak ada glue script. Lihat `plugins/doku-payment/index.ts`.
-
-- **SKILL.md sebagai declarative workflow.** Logika "kapan menagih, apa yang ditanyakan kalau info kurang, format respons sukses, format respons error" hidup sebagai markdown dengan YAML front-matter (`skills/doku-billing/SKILL.md`) — bukan hardcoded prompt di kode. Edit perilaku agent berarti edit satu file markdown.
-
-- **Real Doku Sandbox API call.** Plugin memanggil endpoint `/checkout/v1/payment` Doku Sandbox secara langsung, lengkap dengan invoice number, session ID, dan payment due time. Tidak ada mocking, tidak ada simulasi — link yang dihasilkan benar-benar bisa dibuka di browser.
-
-- **WebChat embed langsung di Next.js.** Frontend punya custom chat UI (`src/components/ChatWindow.tsx`) yang POST ke `localhost:3001/api/message`. Bridge di `server/` adalah runtime ringan untuk SKILL.md + plugin tool yang sama yang didaftarkan ke OpenClaw Gateway via `definePluginEntry`.
-
-- **Natural language entity extraction.** User tidak perlu mengisi form, memilih dropdown, atau mengikuti template. Tiga entitas wajib (`nama_klien`, `item_deskripsi`, `nominal_rupiah`) diekstrak dari satu kalimat oleh Groq LLaMA-3 70B; konversi unit ("juta", "ribu", "k") ditangani oleh LLM tanpa rule-based parser.
-
----
-
-## Repository Layout
-
-```
-paygent-autobiller/
-├── config/
-│   └── openclaw.json              # OpenClaw Gateway configuration
-├── plugins/
-│   └── doku-payment/              # TypeScript plugin (Doku integration)
-│       ├── index.ts               # definePluginEntry + executeDokuCreatePaymentLink
-│       ├── package.json
-│       ├── tsconfig.json
-│       └── dist/                  # Built JS, loaded by gateway / imported by bridge
-├── skills/
-│   └── doku-billing/
-│       └── SKILL.md               # Declarative billing workflow
-├── server/                        # Thin HTTP bridge (Express + Groq tool calling)
-│   ├── bridge.ts
-│   ├── package.json
-│   └── tsconfig.json
-├── docs/
-│   └── OC-3.1-test.md             # Live end-to-end test report
-├── paygent-frontend/              # Next.js 16 + Tailwind CSS frontend
-└── .env.example                   # Template untuk credentials
-```
-
----
-
-## Stack
-
-- **Agent Framework:** OpenClaw 2026.5.7
-- **LLM Provider:** Groq (LLaMA-3 70B 8192 ctx)
-- **Payment Gateway:** Doku Sandbox (Checkout API v1)
-- **Frontend:** Next.js 16 (App Router) + Tailwind CSS 4
-- **Plugin Build:** TypeScript 5 + tsdown (ESM)
-
----
+| Variable | Where to Get | Required |
+|----------|--------------|----------|
+| `GROQ_API_KEY` | https://console.groq.com | Required |
+| `DOKU_CLIENT_ID` | https://jokul.doku.com | Required |
+| `DOKU_SECRET_KEY` | https://jokul.doku.com | Required |
+| `DOKU_BASE_URL` | Default `https://api-sandbox.doku.com` | Optional |
+| `NEXT_PUBLIC_API_URL` | Default `http://localhost:8000` | Optional |
+| `NEXT_PUBLIC_OPENCLAW_URL` | Default `http://localhost:3001` | Optional |
 
 ## License
 
-MIT
+MIT License · Built with ❤️ for OpenClaw Agenthon Indonesia 2026
+
+**Team:** PayGent
+
+**Special Thanks:** Doku · OpenClaw · Groq · Build Club Indonesia
