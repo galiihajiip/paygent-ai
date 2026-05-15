@@ -1,0 +1,11 @@
+{
+  "name": "paygent-autobiller",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix paygent-frontend run build",
+    "dev": "npm --prefix paygent-frontend run dev",
+    "lint": "npm --prefix paygent-frontend run lint",
+    "typecheck": "cd paygent-frontend && npx tsc --noEmit"
+  }
+}
