@@ -2,6 +2,9 @@
 
 # PayGent - Auto-Biller AI
 
+> **PIBITI 2026 Laravel submission:** [`paygent-laravel/`](paygent-laravel/README.md)  
+> Folder ini juga menyimpan referensi OpenClaw (Next.js) versi awal.
+
 **Tagih klien dalam satu kalimat. Terima payment link dalam detik.**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
