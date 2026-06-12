@@ -15,7 +15,7 @@ function parseSsePayload(line) {
     }
 }
 
-async function streamChat({ url, message, conversationId, onDelta, onDone, onError }) {
+async function streamChat({ url, message, conversationId, onConversation, onDelta, onDone, onError }) {
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
     const response = await fetch(url, {
         method: 'POST',
@@ -50,6 +50,9 @@ async function streamChat({ url, message, conversationId, onDelta, onDone, onErr
             if (payload.done) {
                 onDone?.();
                 return;
+            }
+            if (payload.type === 'conversation' && payload.conversation_id) {
+                onConversation?.(payload.conversation_id, payload.title);
             }
             if (payload.type === 'text_delta' && payload.delta) {
                 onDelta?.(payload.delta);
