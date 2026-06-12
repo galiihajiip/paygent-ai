@@ -20,6 +20,9 @@
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|figtree:400,500,600,700&display=swap" rel="stylesheet" />
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#2563eb">
+        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" href="/icons/paygent.svg" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -39,9 +42,7 @@
 
         <!-- Logo -->
         <a href="/" class="relative z-10 mb-8 flex flex-col items-center gap-3 group">
-            <div class="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-lg shadow-blue-500/25">
-                <span class="text-white text-lg font-bold">PG</span>
-            </div>
+            <x-application-logo class="h-14 w-14 rounded-2xl shadow-lg shadow-blue-500/25 transition-transform duration-300 group-hover:scale-110" />
             <span class="font-extrabold text-2xl tracking-tight text-slate-900 dark:text-white">PayGent</span>
         </a>
 
