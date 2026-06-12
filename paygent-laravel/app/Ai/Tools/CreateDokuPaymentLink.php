@@ -18,7 +18,7 @@ class CreateDokuPaymentLink implements Tool
 
     public function description(): Stringable|string
     {
-        return 'Buat payment link Doku ketika user meminta menagih seseorang. Ekstrak nama_klien, item_deskripsi, dan nominal_rupiah.';
+        return 'Buat payment link Doku ketika user meminta menagih seseorang. Ekstrak nama_klien, item_deskripsi, nominal_rupiah, dan nomor_whatsapp klien.';
     }
 
     public function handle(Request $request): Stringable|string
@@ -26,6 +26,11 @@ class CreateDokuPaymentLink implements Tool
         $clientName = (string) $request->string('nama_klien');
         $itemDescription = (string) $request->string('item_deskripsi');
         $amount = (int) $request->integer('nominal_rupiah');
+        $whatsappNumber = $this->normalizeWhatsappNumber((string) $request->string('nomor_whatsapp'));
+
+        if (! $whatsappNumber) {
+            return 'ERROR: Nomor WhatsApp klien belum valid. Minta nomor dengan format 081234567890 atau 6281234567890.';
+        }
 
         $result = app(DokuPaymentService::class)->createPaymentLink($clientName, $itemDescription, $amount);
 
@@ -47,6 +52,9 @@ class CreateDokuPaymentLink implements Tool
             );
         }
 
+        $result['whatsapp_number'] = $whatsappNumber;
+        $result['whatsapp_message'] = $this->buildWhatsappInvoiceMessage($result);
+
         return json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
@@ -56,6 +64,31 @@ class CreateDokuPaymentLink implements Tool
             'nama_klien' => $schema->string()->description('Nama klien')->required(),
             'item_deskripsi' => $schema->string()->description('Deskripsi item atau jasa')->required(),
             'nominal_rupiah' => $schema->integer()->description('Jumlah tagihan Rupiah murni')->required(),
+            'nomor_whatsapp' => $schema->string()->description('Nomor WhatsApp klien valid, contoh 081234567890 atau 6281234567890')->required(),
         ];
+    }
+
+    protected function normalizeWhatsappNumber(string $number): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $number);
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '62'.substr($digits, 1);
+        }
+
+        return preg_match('/^628\d{8,11}$/', $digits) ? $digits : null;
+    }
+
+    protected function buildWhatsappInvoiceMessage(array $payment): string
+    {
+        $amount = 'Rp '.number_format((int) ($payment['nominal_rupiah'] ?? 0), 0, ',', '.');
+
+        return "Halo {$payment['nama_klien']},\n\n"
+            ."Berikut tagihan untuk {$payment['item_deskripsi']}.\n"
+            ."Nominal: {$amount}\n"
+            ."No. Invoice: {$payment['invoice_number']}\n\n"
+            ."Silakan lakukan pembayaran melalui link berikut:\n"
+            ."{$payment['payment_url']}\n\n"
+            .'Terima kasih.';
     }
 }
