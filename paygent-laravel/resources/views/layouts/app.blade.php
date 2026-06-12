@@ -11,7 +11,9 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#2563eb">
-        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" href="/icons/paygent.svg" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 
         <script>
             (function () {
