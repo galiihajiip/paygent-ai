@@ -19,7 +19,7 @@
     <div class="py-6 sm:py-8 bg-[#F8FAFC] dark:bg-[#0B1120]">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- Stats KPI Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="stats-grid">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="stats-grid">
                 <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-5 hover-lift">
                     <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Invoice</p>
                     <p class="mt-3 text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white" data-stat="total">{{ $stats['total'] }}</p>
@@ -32,11 +32,11 @@
                     <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending</p>
                     <p class="mt-3 text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400" data-stat="pending">{{ $stats['pending'] }}</p>
                 </div>
-                <div class="rounded-2xl border border-blue-200 dark:border-blue-800/60 bg-white dark:bg-[#0F172A] p-5 hover-lift col-span-2 md:col-span-1">
+                <div class="rounded-2xl border border-blue-200 dark:border-blue-800/60 bg-white dark:bg-[#0F172A] p-5 hover-lift sm:col-span-2 md:col-span-1">
                     <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Revenue</p>
                     <p class="mt-3 text-xl sm:text-2xl font-bold text-slate-900 dark:text-white line-clamp-1" data-stat="revenue">Rp {{ number_format($stats['revenue'], 0, ',', '.') }}</p>
                 </div>
-                <div class="rounded-2xl border border-rose-200 dark:border-rose-800/60 bg-white dark:bg-[#0F172A] p-5 hover-lift col-span-2 md:col-span-1">
+                <div class="rounded-2xl border border-rose-200 dark:border-rose-800/60 bg-white dark:bg-[#0F172A] p-5 hover-lift sm:col-span-2 md:col-span-1">
                     <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Outstanding</p>
                     <p class="mt-3 text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400 line-clamp-1" data-stat="outstanding">Rp {{ number_format($stats['outstanding'], 0, ',', '.') }}</p>
                 </div>
