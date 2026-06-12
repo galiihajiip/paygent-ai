@@ -1,6 +1,6 @@
-const CACHE_NAME = "paygent-pwa-v2";
-const STATIC_CACHE = "paygent-static-v2";
-const IMAGE_CACHE = "paygent-images-v2";
+const CACHE_NAME = "paygent-pwa-v3";
+const STATIC_CACHE = "paygent-static-v3";
+const IMAGE_CACHE = "paygent-images-v3";
 
 // App shell — pre-cached on install
 const APP_SHELL = [
@@ -8,9 +8,15 @@ const APP_SHELL = [
   "/chat",
   "/dashboard",
   "/manifest.webmanifest",
+  "/favicon.ico",
   "/icons/paygent.svg",
+  "/icons/icon-72.png",
+  "/icons/icon-96.png",
+  "/icons/icon-128.png",
   "/icons/icon-192.png",
+  "/icons/icon-384.png",
   "/icons/icon-512.png",
+  "/icons/apple-touch-icon.png",
 ];
 
 // ---- INSTALL ----
