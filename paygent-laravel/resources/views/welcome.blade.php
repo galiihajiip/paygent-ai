@@ -9,6 +9,9 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800|figtree:400,500,600,700&display=swap" rel="stylesheet" />
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#2563eb">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/icons/paygent.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     
     <script>
         (function () {
@@ -27,9 +30,7 @@
     <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-slate-800/80 dark:bg-[#0F172A]/80 transition-colors duration-300">
         <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 sm:px-6">
             <a href="/" class="flex items-center gap-2.5 group">
-                <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center transition-transform group-hover:scale-105">
-                    <span class="text-white text-xs font-bold">PG</span>
-                </div>
+                <x-application-logo class="h-9 w-9 rounded-xl shadow-sm shadow-blue-500/20 transition-transform group-hover:scale-105" />
                 <span class="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">PayGent</span>
             </a>
             
@@ -76,30 +77,28 @@
             </div>
 
             <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#0F172A] dark:text-white tracking-tight mb-6 animate-fade-in-up" style="animation-delay: 0.1s;">
-                Tagih klien dalam<br />
-                <span class="gradient-text">satu kalimat.</span>
+                Cukup satu kalimat,<br />
+                <span class="gradient-text">tagihan klien langsung beres.</span>
             </h1>
 
             <p class="mt-4 text-base sm:text-lg text-[#64748B] dark:text-[#94A3B8] max-w-2xl mx-auto leading-relaxed animate-fade-in-up" style="animation-delay: 0.2s;">
-                PayGent mengubah pesan suara atau teks menjadi payment link Doku profesional secara instan.
-                Tanpa form rumit, tanpa dashboard membingungkan.
+                Bebaskan dirimu dari form manual yang merepotkan. PayGent menyulap pesan teks atau suaramu menjadi payment link Doku profesional dalam hitungan detik. Cepat, elegan, dan siap bayar.
             </p>
 
             <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up" style="animation-delay: 0.3s;">
                 <a href="{{ auth()->check() ? route('chat.index') : route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5">
-                    Mulai Sekarang
+                    Coba Sekarang
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </a>
                 <a href="#how-it-works" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] text-[#0F172A] dark:text-white px-8 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 hover:bg-[#F8FAFC] dark:hover:bg-[#334155]">
-                    Lihat Demo
+                    Tonton Demo
                 </a>
             </div>
 
             <!-- Stats Bar -->
             <div class="mt-16 sm:mt-24 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 border-y border-[#E2E8F0] dark:border-[#1E293B] py-8 animate-fade-in-up" style="animation-delay: 0.4s;">
                 <div class="text-center">
-                    <p class="text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-white mb-1">&lt; 3s</p>
-                    <p class="text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#94A3B8]">Response Time</p>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-white mb-1">Eksekusi &lt; 3 Detik</p>
                 </div>
                 <div class="text-center">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#0F172A] dark:text-white mb-1">Doku</p>
@@ -121,10 +120,10 @@
     <section class="max-w-6xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
         <div class="text-center mb-12">
             <p class="text-xs sm:text-sm font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-2">
-                Fitur Unggulan
+                Fitur Andalan
             </p>
             <h2 class="text-2xl sm:text-3xl font-bold text-[#0F172A] dark:text-white tracking-tight">
-                Semua yang kamu butuhkan untuk menagih
+                Solusi lengkap untuk penagihan tanpa drama
             </h2>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 stagger-children">
@@ -134,23 +133,23 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 dark:text-blue-400"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <h3 class="text-[#0F172A] dark:text-white font-bold text-base mb-2">Natural Language Billing</h3>
-                <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Ketikan perintah seperti biasa, AI akan mengekstrak nama klien, nominal, dan deskripsi jasa.</p>
+                <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Cukup ngobrol santai dengan AI. PayGent otomatis mengenali nama klien, deskripsi project, dan total tagihan tanpa perlu input manual.</p>
             </div>
             <!-- Feature 2 -->
             <div class="group relative bg-gradient-to-br from-violet-50/50 to-white dark:from-[#1E293B] dark:to-[#0F172A] bg-white dark:bg-[#1E293B]/60 border border-[#E2E8F0] dark:border-[#334155]/60 rounded-2xl p-6 hover-lift">
                 <div class="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-violet-600 dark:text-violet-400"><path d="m5 11 4-7"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8c.9 0 1.8-.7 2-1.6l1.7-7.4"/><path d="m9 11 1 9"/><path d="M4.5 15.5h15"/><path d="m15 11-1 9"/></svg>
                 </div>
-                <h3 class="text-[#0F172A] dark:text-white font-bold text-base mb-2">Doku Integration</h3>
-                <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Payment link otomatis dibuat dan siap dikirim ke klien. Mendukung berbagai metode pembayaran.</p>
+                <h3 class="text-[#0F172A] dark:text-white font-bold text-base mb-2">Seamless Doku Integration</h3>
+                <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Payment link Doku ter-generate seketika dan siap dibagikan. Klien bisa langsung bertransaksi menggunakan metode pembayaran favorit mereka.</p>
             </div>
             <!-- Feature 3 -->
             <div class="group relative bg-gradient-to-br from-emerald-50/50 to-white dark:from-[#1E293B] dark:to-[#0F172A] bg-white dark:bg-[#1E293B]/60 border border-[#E2E8F0] dark:border-[#334155]/60 rounded-2xl p-6 hover-lift">
                 <div class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600 dark:text-emerald-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
                 </div>
-                <h3 class="text-[#0F172A] dark:text-white font-bold text-base mb-2">Smart Reminders</h3>
-                <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">CFO Dashboard otomatis mendeteksi tagihan telat dan memberikan rekomendasi follow up.</p>
+                <h3 class="text-[#0F172A] dark:text-white font-bold text-base mb-2">Proactive Smart Reminders</h3>
+                <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Tidak perlu mengecek dashboard tiap hari. AI kami mendeteksi invoice yang menunggak dan memberikan rekomendasi follow-up yang tepat sasaran.</p>
             </div>
         </div>
     </section>
@@ -163,7 +162,7 @@
                     Cara Kerja
                 </p>
                 <h2 class="text-2xl sm:text-3xl font-bold text-[#0F172A] dark:text-white tracking-tight">
-                    Tiga langkah simpel
+                    Tiga langkah instan menuju lunas
                 </h2>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6">
@@ -174,7 +173,7 @@
                     </div>
                     <p class="text-xs font-bold tracking-widest mb-2 text-blue-600 dark:text-blue-400">STEP 01</p>
                     <h4 class="text-[#0F172A] dark:text-white font-bold text-lg mb-2">Ketik atau Bicara</h4>
-                    <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Sebut nama klien, deskripsi, dan nominal di chat AI.</p>
+                    <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Sebutkan siapa kliennya, apa jasanya, dan berapa nominalnya langsung di kolom chat.</p>
                 </div>
                 <!-- Step 2 -->
                 <div class="relative text-center sm:text-left">
@@ -182,8 +181,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     </div>
                     <p class="text-xs font-bold tracking-widest mb-2 text-violet-600 dark:text-violet-400">STEP 02</p>
-                    <h4 class="text-[#0F172A] dark:text-white font-bold text-lg mb-2">AI Proses Otomatis</h4>
-                    <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">PayGent AI mengekstrak data dan memanggil Doku API secara otomatis.</p>
+                    <h4 class="text-[#0F172A] dark:text-white font-bold text-lg mb-2">AI Bekerja di Belakang Layar</h4>
+                    <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">PayGent mengekstrak instruksimu dan memanggil API Doku secara otonom, aman, dan akurat.</p>
                 </div>
                 <!-- Step 3 -->
                 <div class="relative text-center sm:text-left">
@@ -191,8 +190,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </div>
                     <p class="text-xs font-bold tracking-widest mb-2 text-emerald-600 dark:text-emerald-400">STEP 03</p>
-                    <h4 class="text-[#0F172A] dark:text-white font-bold text-lg mb-2">Terima Payment Link</h4>
-                    <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Link pembayaran siap dikirim. Invoice bisa di-download.</p>
+                    <h4 class="text-[#0F172A] dark:text-white font-bold text-lg mb-2">Kirim & Terima Bayaran</h4>
+                    <p class="text-[#64748B] dark:text-[#94A3B8] text-sm leading-relaxed">Payment link langsung terbit dan siap di-share. Invoice profesional juga tersedia untuk diunduh.</p>
                 </div>
             </div>
         </div>
@@ -206,10 +205,10 @@
                 <div class="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-violet-400/20 blur-2xl"></div>
             </div>
             <div class="relative z-10">
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">Siap tagih klien tanpa ribet?</h2>
-                <p class="text-blue-100 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">Mulai gunakan PayGent sekarang. Ketik perintah, dapat payment link. Semudah itu.</p>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">Siap ucapkan selamat tinggal pada tagihan macet?</h2>
+                <p class="text-blue-100 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed">Jadikan penagihan semudah mengirim chat. Tinggalkan cara lama, mulai percakapan pertamamu dengan PayGent hari ini.</p>
                 <a href="{{ auth()->check() ? route('chat.index') : route('login') }}" class="group inline-flex items-center justify-center gap-2.5 bg-white hover:bg-blue-50 text-blue-700 text-sm font-bold px-8 py-4 rounded-2xl transition-all duration-300 shadow-lg hover:-translate-y-0.5">
-                    Mulai Chat dengan PayGent
+                    Mulai Chat dengan PayGent Sekarang
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200 group-hover:translate-x-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </a>
             </div>
@@ -221,13 +220,11 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                 <div class="md:col-span-2">
                     <div class="flex items-center gap-2 mb-4">
-                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                            <span class="text-white text-[10px] font-bold">PG</span>
-                        </div>
+                        <x-application-logo class="h-8 w-8 rounded-xl shadow-sm shadow-blue-500/20" />
                         <span class="font-bold text-xl text-slate-900 dark:text-white">PayGent</span>
                     </div>
                     <p class="text-slate-500 dark:text-slate-400 text-sm max-w-sm leading-relaxed mb-6">
-                        AI Agent untuk penagihan otomatis. Ubah percakapan santai menjadi invoice dan payment link Doku secara real-time.
+                        AI CFO pribadi untuk freelancer. Sulap obrolan santai menjadi invoice dan payment link Doku secara instan.
                     </p>
                     <div class="flex gap-4">
                         <a href="#" class="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
