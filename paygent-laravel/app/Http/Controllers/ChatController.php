@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Ai\Agents\PayGentAgent;
 use App\Models\Invoice;
+use App\Services\DokuPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Laravel\Ai\Models\Conversation;
@@ -49,23 +50,172 @@ class ChatController extends Controller
         ]);
 
         $user = $request->user();
+        $billingContext = $this->billingContext($validated['message'], $validated['conversation_id'] ?? null, $user->id);
+        $billingData = $this->extractBillingData($billingContext);
+
+        if ($billingData) {
+            return $this->paymentStream($user, $validated['message'], $validated['conversation_id'] ?? null, $billingData);
+        }
+
+        if ($this->needsWhatsappNumber($billingContext)) {
+            return $this->assistantTextStream(
+                $user,
+                $validated['message'],
+                $validated['conversation_id'] ?? null,
+                'Boleh kirim nomor WhatsApp klien yang valid dulu? Formatnya bisa seperti 081234567890 atau 6281234567890. Nomor ini dipakai untuk tombol Tagih Sekarang.',
+            );
+        }
 
         if (! filled(config('ai.providers.groq.key'))) {
             return $this->demoStream($user, $validated['message'], $validated['conversation_id'] ?? null);
         }
 
         $agent = PayGentAgent::make(user: $user)->forUser($user);
+        $conversation = null;
 
         if (! empty($validated['conversation_id'])) {
-            Conversation::query()
+            $conversation = Conversation::query()
                 ->where('user_id', $user->id)
                 ->where('id', $validated['conversation_id'])
                 ->firstOrFail();
 
-            $agent->continue($validated['conversation_id'], $user);
+            $agent->continue($conversation->id, $user);
+        } else {
+            $conversation = $this->resolveConversation($user->id, null, $validated['message']);
+            $agent->continue($conversation->id, $user);
         }
 
-        return $agent->stream($validated['message']);
+        $stream = $agent->stream($validated['message']);
+
+        return response()->stream(function () use ($stream, $conversation) {
+            echo 'data: '.json_encode([
+                'type' => 'conversation',
+                'conversation_id' => $conversation->id,
+                'title' => $conversation->title,
+            ], JSON_UNESCAPED_UNICODE)."\n\n";
+            ob_flush();
+            flush();
+
+            foreach ($stream as $event) {
+                echo 'data: '.((string) $event)."\n\n";
+                ob_flush();
+                flush();
+            }
+
+            echo "data: [DONE]\n\n";
+        }, headers: [
+            'Cache-Control' => 'no-cache, no-transform',
+            'Content-Type' => 'text/event-stream',
+        ]);
+    }
+
+    protected function paymentStream($user, string $message, ?string $conversationId, array $billingData)
+    {
+        $conversation = $this->resolveConversation($user->id, $conversationId, $message);
+
+        $result = app(DokuPaymentService::class)->createPaymentLink(
+            $billingData['client_name'],
+            $billingData['item_description'],
+            $billingData['amount'],
+        );
+
+        if ($result['success'] ?? false) {
+            $result['item_deskripsi'] = $billingData['item_description'];
+            $result['nominal_rupiah'] = $billingData['amount'];
+            $result['whatsapp_number'] = $billingData['whatsapp_number'];
+            $result['whatsapp_message'] = $this->buildWhatsappInvoiceMessage($result);
+
+            Invoice::query()->updateOrCreate(
+                ['invoice_number' => $result['invoice_number']],
+                [
+                    'user_id' => $user->id,
+                    'client_name' => $billingData['client_name'],
+                    'item_description' => $billingData['item_description'],
+                    'amount' => $billingData['amount'],
+                    'status' => 'PENDING',
+                    'payment_url' => $result['payment_url'],
+                ],
+            );
+
+            $reply = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } else {
+            $reply = 'Maaf, payment link Doku belum berhasil dibuat. '
+                .($result['error'] ?? 'Terjadi error tidak dikenal.');
+        }
+
+        $this->storeMessage($conversation->id, $user->id, 'user', $message);
+        $this->storeMessage($conversation->id, $user->id, 'assistant', $reply);
+
+        return response()->stream(function () use ($conversation, $reply) {
+            echo 'data: '.json_encode([
+                'type' => 'conversation',
+                'conversation_id' => $conversation->id,
+                'title' => $conversation->title,
+            ], JSON_UNESCAPED_UNICODE)."\n\n";
+            ob_flush();
+            flush();
+
+            foreach (str_split($reply, 24) as $chunk) {
+                echo 'data: '.json_encode([
+                    'type' => 'text_delta',
+                    'delta' => $chunk,
+                ], JSON_UNESCAPED_UNICODE)."\n\n";
+                ob_flush();
+                flush();
+                usleep(20000);
+            }
+
+            echo "data: [DONE]\n\n";
+        }, headers: [
+            'Cache-Control' => 'no-cache, no-transform',
+            'Content-Type' => 'text/event-stream',
+        ]);
+    }
+
+    protected function buildWhatsappInvoiceMessage(array $payment): string
+    {
+        $amount = 'Rp '.number_format((int) ($payment['nominal_rupiah'] ?? 0), 0, ',', '.');
+
+        return "Halo {$payment['nama_klien']},\n\n"
+            ."Berikut tagihan untuk {$payment['item_deskripsi']}.\n"
+            ."Nominal: {$amount}\n"
+            ."No. Invoice: {$payment['invoice_number']}\n\n"
+            ."Silakan lakukan pembayaran melalui link berikut:\n"
+            ."{$payment['payment_url']}\n\n"
+            .'Terima kasih.';
+    }
+
+    protected function assistantTextStream($user, string $message, ?string $conversationId, string $reply)
+    {
+        $conversation = $this->resolveConversation($user->id, $conversationId, $message);
+
+        $this->storeMessage($conversation->id, $user->id, 'user', $message);
+        $this->storeMessage($conversation->id, $user->id, 'assistant', $reply);
+
+        return response()->stream(function () use ($conversation, $reply) {
+            echo 'data: '.json_encode([
+                'type' => 'conversation',
+                'conversation_id' => $conversation->id,
+                'title' => $conversation->title,
+            ], JSON_UNESCAPED_UNICODE)."\n\n";
+            ob_flush();
+            flush();
+
+            foreach (str_split($reply, 18) as $chunk) {
+                echo 'data: '.json_encode([
+                    'type' => 'text_delta',
+                    'delta' => $chunk,
+                ], JSON_UNESCAPED_UNICODE)."\n\n";
+                ob_flush();
+                flush();
+                usleep(20000);
+            }
+
+            echo "data: [DONE]\n\n";
+        }, headers: [
+            'Cache-Control' => 'no-cache, no-transform',
+            'Content-Type' => 'text/event-stream',
+        ]);
     }
 
     protected function demoStream($user, string $message, ?string $conversationId)
@@ -76,7 +226,15 @@ class ChatController extends Controller
         $this->storeMessage($conversation->id, $user->id, 'user', $message);
         $this->storeMessage($conversation->id, $user->id, 'assistant', $reply);
 
-        return response()->stream(function () use ($reply) {
+        return response()->stream(function () use ($conversation, $reply) {
+            echo 'data: '.json_encode([
+                'type' => 'conversation',
+                'conversation_id' => $conversation->id,
+                'title' => $conversation->title,
+            ], JSON_UNESCAPED_UNICODE)."\n\n";
+            ob_flush();
+            flush();
+
             foreach (str_split($reply, 18) as $chunk) {
                 echo 'data: '.json_encode([
                     'type' => 'text_delta',
@@ -190,6 +348,69 @@ class ChatController extends Controller
         return null;
     }
 
+    protected function extractBillingData(string $message): ?array
+    {
+        $normalized = Str::lower($message);
+        $isBillingIntent = str_contains($normalized, 'tagih')
+            || str_contains($normalized, 'invoice')
+            || str_contains($normalized, 'tagihan')
+            || str_contains($normalized, 'payment link');
+
+        if (! $isBillingIntent) {
+            return null;
+        }
+
+        $amount = $this->parseAmount($message);
+        $clientName = $this->parseClientName($message);
+        $itemDescription = $this->parseItemDescription($message);
+        $whatsappNumber = $this->parseWhatsappNumber($message);
+
+        if (! $amount || ! $clientName || ! $itemDescription || ! $whatsappNumber) {
+            return null;
+        }
+
+        return [
+            'client_name' => $clientName,
+            'item_description' => $this->cleanItemDescription($itemDescription),
+            'amount' => $amount,
+            'whatsapp_number' => $whatsappNumber,
+        ];
+    }
+
+    protected function needsWhatsappNumber(string $message): bool
+    {
+        $normalized = Str::lower($message);
+        $isBillingIntent = str_contains($normalized, 'tagih')
+            || str_contains($normalized, 'invoice')
+            || str_contains($normalized, 'tagihan')
+            || str_contains($normalized, 'payment link');
+
+        return $isBillingIntent
+            && $this->parseAmount($message)
+            && $this->parseClientName($message)
+            && $this->parseItemDescription($message)
+            && ! $this->parseWhatsappNumber($message);
+    }
+
+    protected function billingContext(string $message, ?string $conversationId, int $userId): string
+    {
+        if (! $conversationId) {
+            return $message;
+        }
+
+        $previousMessages = ConversationMessage::query()
+            ->where('conversation_id', $conversationId)
+            ->where('user_id', $userId)
+            ->where('role', 'user')
+            ->latest('created_at')
+            ->limit(4)
+            ->pluck('content')
+            ->reverse()
+            ->push($message);
+
+        return $previousMessages->implode("\n");
+    }
+
     protected function parseClientName(string $message): ?string
     {
         if (preg_match('/tagih(?:kan)?\s+(.+?)\s+(?:rp\s*)?\d/i', $message, $matches)) {
@@ -201,8 +422,37 @@ class ChatController extends Controller
 
     protected function parseItemDescription(string $message): ?string
     {
-        if (preg_match('/\buntuk\s+(.+)$/i', $message, $matches)) {
-            return trim($matches[1]);
+        if (preg_match('/\buntuk\s+(.+?)(?:\s+(?:ke\s+)?(?:no\.?|nomor|wa|whatsapp|nomor\s*(?:wa|whatsapp)|hp)\b|$)/i', $message, $matches)) {
+            return $this->cleanItemDescription($matches[1]);
+        }
+
+        return null;
+    }
+
+    protected function cleanItemDescription(string $description): string
+    {
+        $description = preg_replace('/^[\s\/:;,-]*(?:deskripsi|item|jasa|pesan\s*invoice)\s*[:\-]?\s*/i', '', $description);
+        $description = preg_replace('/\s+(?:ke\s+)?(?:no\.?|nomor|wa|whatsapp|nomor\s*(?:wa|whatsapp)|hp)\b.*$/i', '', $description);
+
+        return trim($description);
+    }
+
+    protected function parseWhatsappNumber(string $message): ?string
+    {
+        if (! preg_match_all('/(?:\+?62|0)[\d\s().-]{7,18}\d/', $message, $matches)) {
+            return null;
+        }
+
+        foreach ($matches[0] as $match) {
+            $number = preg_replace('/\D+/', '', $match);
+
+            if (str_starts_with($number, '0')) {
+                $number = '62'.substr($number, 1);
+            }
+
+            if (preg_match('/^628\d{8,11}$/', $number)) {
+                return $number;
+            }
         }
 
         return null;
