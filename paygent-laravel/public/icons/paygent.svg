@@ -1,8 +1,23 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="112" fill="#2563EB"/>
-  <circle cx="250" cy="270" r="152" fill="#1D4ED8"/>
-  <path d="M165 145V370M165 145H282C352 145 389 185 389 244C389 303 352 343 282 343H165" stroke="white" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M392 82L417 137L472 82L417 27L392 82Z" fill="#93C5FD"/>
-  <circle cx="452" cy="149" r="17" fill="#DBEAFE"/>
-  <circle cx="371" cy="59" r="18" fill="#BFDBFE"/>
+  <defs>
+    <linearGradient id="paygent-bg" x1="72" y1="40" x2="448" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="0.52" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <linearGradient id="paygent-card" x1="146" y1="116" x2="356" y2="384" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#paygent-bg)"/>
+  <circle cx="384" cy="112" r="74" fill="white" fill-opacity="0.14"/>
+  <circle cx="116" cy="408" r="88" fill="#0F172A" fill-opacity="0.12"/>
+  <path d="M164 129C164 108.565 180.565 92 201 92H318L388 162V360C388 380.435 371.435 397 351 397H201C180.565 397 164 380.435 164 360V129Z" fill="url(#paygent-card)"/>
+  <path d="M318 92V143C318 153.493 326.507 162 337 162H388" fill="#BFDBFE"/>
+  <path d="M207 202H318" stroke="#2563EB" stroke-width="24" stroke-linecap="round"/>
+  <path d="M207 260H296" stroke="#38BDF8" stroke-width="24" stroke-linecap="round"/>
+  <path d="M207 318H260" stroke="#99F6E4" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="347" cy="342" r="70" fill="#0F766E"/>
+  <path d="M315 342L338 365L383 315" stroke="white" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
