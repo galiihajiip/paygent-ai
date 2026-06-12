@@ -6,9 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center gap-2">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                            <span class="text-white text-[10px] font-bold">PG</span>
-                        </div>
+                        <x-application-logo class="h-8 w-8 rounded-xl shadow-sm shadow-blue-500/20" />
                         <span class="font-bold text-lg text-slate-800 dark:text-slate-100 hidden sm:block">PayGent</span>
                     </a>
                 </div>
